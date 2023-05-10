@@ -3,12 +3,11 @@
 
 import progressbar
 
-
 import warnings
 warnings.filterwarnings("ignore")
 
 import os, sys
-from bunch import Bunch
+from munch import Munch as Bunch
 
 from netCDF4 import Dataset, num2date, date2num
 import numpy as np
