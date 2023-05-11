@@ -43,7 +43,7 @@ def readgr3(filename):
         fid.close();
         return out
 
-def transform_ll_to_cpp(lon, lat, lonc=115, latc=-32):
+def transform_ll_to_cpp(lon, lat, lonc, latc):
     # harcoded central location for projection and degrees into meters
     # but can compute mean lonc: lonc=(np.max(lon)+np.min(lon))/2.0
     longitude=lon/180*np.pi
@@ -172,7 +172,8 @@ def schism_bbox(blon, blat):
     ymin, ymax = np.min(blat)-offset, np.max(blat)+offset        
     return np.array([xmin, xmax, ymin, ymax])
 
-def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './'):
+def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './',
+                lonc = 175., latc = -37.):
     schism = Bunch()
     # get schism mesh
     schism_mesh = os.path.join(schism_grid_dir, schism_grid_file)
@@ -184,7 +185,8 @@ def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './'):
     depth = hgrid.values          # this is grid bathymery
     zcor = depth[:,None]*sigma    # this is 2D array with layer depths at [nodes, layers]
     nvrt = zcor.shape[1]          # number of SCHISM layers
-    x, y = transform_ll_to_cpp(hgrid.coords[:,0], hgrid.coords[:,1]) # transform them to meters
+    x, y = transform_ll_to_cpp(hgrid.coords[:,0], hgrid.coords[:,1],
+                               lonc, latc) # transform them to meters
     
     # get SCHISM open boundaries from grid file
     gdf = hgrid.boundaries.open.copy()    
@@ -328,9 +330,10 @@ def read_roms_files(roms_dir, roms_grid, template, dates):
 
     return roms_data
 
-def spatial_interp(roms_grid, mask, coord_x, coord_y):
+def spatial_interp(roms_grid, mask, coord_x, coord_y, lonc, latc):
     # Prepare for spatial (2d) interpolation
-    x2, y2 = transform_ll_to_cpp(roms_grid.lonr, roms_grid.latr) # transform to [m], the same projection as SCHISM 
+    x2, y2 = transform_ll_to_cpp(roms_grid.lonr, roms_grid.latr,
+                                 lonc, latc) # transform to [m], the same projection as SCHISM
     XY = np.vstack((x2[mask], y2[mask])).T
     XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
     weights, verts = calc_weights(XY, XYout)
@@ -342,7 +345,8 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y):
 
 
 def make_boundary(schism, template, dates, dcrit = 700,
-                  roms_dir = './', roms_grid_filename = None):
+                  roms_dir = './', roms_grid_filename = None,
+                  lonc = 175., latc = -37.):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
@@ -356,7 +360,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
     
-    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi)
+    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, lonc, latc)
 
     # init outputs 
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -412,7 +416,8 @@ def make_boundary(schism, template, dates, dcrit = 700,
     return
 
 
-def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './', roms_grid_filename = None):
+def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
+                 roms_grid_filename = None, lonc = 175., latc = -37.):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
@@ -434,7 +439,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './', roms_gri
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
       
-    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y)
+    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, lonc, latc)
 
     # initi outputs nudgining
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -471,13 +476,13 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './', roms_gri
 
 
 def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
-         roms_dir = './', roms_grid_filename = None):
+         roms_dir = './', roms_grid_filename = None, lonc = 175., latc = -37.):
     # ## Actual start of the roms2schism interpolation
     
     # part with reading SCHISM mesh
     schism_grid_file = 'hgrid.ll'
     schism_vgrid_file = 'vgrid.in'
-    schism = schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir)
+    schism = schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir, lonc, latc)
     
     if bry == 'True':
         print('Making bry files for SCHISM')
@@ -500,6 +505,8 @@ if __name__=='__main__':
     parser.add_argument('--schism_grid_dir', default='./', help='SCHISM grid directory')
     parser.add_argument('--roms_dir', default='./', help='ROMS output directory')
     parser.add_argument('--roms_grid_filename', default=None, help='ROMS grid filename (None if no grid required)')
+    parser.add_argument('--lonc', default=175.,  type=float, help='reference longitude for converting coordinates to metres')
+    parser.add_argument('--latc', default=-37.,  type=float, help='reference latitude for converting coordinates to metres')
     parser.add_argument('--bry', default=False, help='make boundary file')
     parser.add_argument('--nudge', default=False, help='make nudging file')
     parser.add_argument('--template', default='model_avg_%Y%m%d.nc', help='roms output filename template')
@@ -508,4 +515,5 @@ if __name__=='__main__':
     args = parser.parse_args()
     dates = datetime.strptime(args.start_date,'%Y%m%d') + np.arange(args.ndays)*timedelta(days=1)
     main(dates, args.template, args.bry, args.nudge, args.dcrit,
-         args.schism_grid_dir, args.roms_dir, args.roms_grid_filename)
+         args.schism_grid_dir, args.roms_dir, args.roms_grid_filename,
+         args.lonc, args.latc)
