@@ -159,7 +159,7 @@ def rot2d(x, y, ang): #rotate vectors by geometric angle
 
 def schism_bbox(blon, blat):
     """
-    Calculate boundry box of schism grid
+    Calculate boundary box of schism grid
     """
     # add small offeset for interpolation
     offset = 0.01
@@ -255,7 +255,7 @@ def vert_interp(temp_interp, roms_depths_at_schism_node, schism_depth):
         schism_temp[n,:] = f(schism_depth[n,:])
     return schism_temp
 
-def save_boundry_nc(outfile, data, date, schism):
+def save_boundary_nc(outfile, data, date, schism):
     '''
     nComp = 1 for zeta, temp and salt
     nComp = 2 for uv
@@ -345,7 +345,7 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y):
     return weights, verts, XY, XYout, depth_interp
 
 
-def make_boundry(schism, prefix, dates, dcrit = 700, roms_dir = './'):
+def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './'):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
@@ -402,15 +402,15 @@ def make_boundry(schism, prefix, dates, dcrit = 700, roms_dir = './'):
     print('Done interpolating')
     # now you need to save them in the boundary files
     os.system('rm  -f elev2D.th.nc TEM_3D.th.nc SAL_3D.th.nc uv3D.th.nc')
-    save_boundry_nc('elev2D.th.nc', schism_zeta, roms_data.date, schism)
-    save_boundry_nc('TEM_3D.th.nc', schism_temp, roms_data.date, schism)
-    save_boundry_nc('SAL_3D.th.nc', schism_salt, roms_data.date, schism)
-    save_boundry_nc('uv3D.th.nc', schism_uv, roms_data.date, schism)
+    save_boundary_nc('elev2D.th.nc', schism_zeta, roms_data.date, schism)
+    save_boundary_nc('TEM_3D.th.nc', schism_temp, roms_data.date, schism)
+    save_boundary_nc('SAL_3D.th.nc', schism_salt, roms_data.date, schism)
+    save_boundary_nc('uv3D.th.nc', schism_uv, roms_data.date, schism)
         
     return
 
 
-def make_nudginig(schism, prefix, dates, dcrit = 700, roms_dir = './'):
+def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './'):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
@@ -475,11 +475,11 @@ def main(dates, prefix, bry=False, nudge=False, dcrit = 700, grid_dir = './',
     
     if bry == 'True':
         print('Making bry files for SCHISM')
-        make_boundry(schism, prefix, dates, dcrit, roms_dir)
+        make_boundary(schism, prefix, dates, dcrit, roms_dir)
         
     if nudge == 'True':
         print('Making nudging files for SCHISM')
-        make_nudginig(schism, prefix, dates, dcrit, roms_dir)
+        make_nudging(schism, prefix, dates, dcrit, roms_dir)
         
     return    
         
@@ -493,7 +493,7 @@ if __name__=='__main__':
     parser.add_argument('--dcrit', default=700,  type=float, help='maximum distance for interpolation - if distance larger than dcrit, use closest value from ROMS grid, to avoid interpolating over land (should be slightly larger than ROMS grid resolution)')
     parser.add_argument('--grid_dir', default='./', help='SCHISM grid directory')
     parser.add_argument('--roms_dir', default='./', help='ROMS output directory')
-    parser.add_argument('--bry', default=False, help='make boundry file')
+    parser.add_argument('--bry', default=False, help='make boundary file')
     parser.add_argument('--nudge', default=False, help='make nudging file')
     parser.add_argument('--prefix', default='avg', help='roms prefix file (default avg) avg or his')
     # For nudging you don't need hourly (his) data and faster approach (and better) is to use avg file
