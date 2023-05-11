@@ -19,8 +19,6 @@ from datetime import datetime, timedelta
 from pyschism.mesh import Hgrid
 from pyschism.mesh.vgrid import Vgrid
 
-roms_grid_filename = '/home/ivica/AUSTRALIA/ROMS/cwa/NESTING/grid.nc'
-
 # define functions
 
 def readgr3(filename):
@@ -167,13 +165,13 @@ def schism_bbox(blon, blat):
     ymin, ymax = np.min(blat)-offset, np.max(blat)+offset        
     return np.array([xmin, xmax, ymin, ymax])
 
-def schism_grid(schism_grid_file, schism_vgrid_file, grid_dir = './'):
+def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './'):
     schism = Bunch()
     # get schism mesh
-    schism_mesh = os.path.join(grid_dir, schism_grid_file)
+    schism_mesh = os.path.join(schism_grid_dir, schism_grid_file)
     hgrid = Hgrid.open(schism_mesh,  crs='EPSG:4326')   
     # get schism depths
-    schism_vgrid = os.path.join(grid_dir, schism_vgrid_file)
+    schism_vgrid = os.path.join(schism_grid_dir, schism_vgrid_file)
     vd=Vgrid.open(schism_vgrid)
     sigma = vd.sigma              # sigma values for vertical grid
     depth = hgrid.values          # this is grid bathymery
@@ -325,7 +323,7 @@ def read_roms_files(roms_dir, roms_grid, prefix, dates):
 
     return roms_data
     
-def roms_grid_file(bbox):
+def roms_grid_file(bbox, roms_grid_filename = None):
     # part to load ROMS grid for given subset
     roms_grid = read_roms_grid(roms_grid_filename, bbox)
     
@@ -345,7 +343,7 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y):
     return weights, verts, XY, XYout, depth_interp
 
 
-def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './'):
+def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_filename = None):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
@@ -410,7 +408,7 @@ def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './'):
     return
 
 
-def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './'):
+def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_filename = None):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
@@ -464,22 +462,22 @@ def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './'):
     save_nudging_nc('SAL_nu.nc', schism_salt, roms_data.date, np.array(OK))
 
 
-def main(dates, prefix, bry=False, nudge=False, dcrit = 700, grid_dir = './',
-         roms_dir = './'):
+def main(dates, prefix, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
+         roms_dir = './', roms_grid_filename = None):
     # ## Actual start of the roms2schism interpolation
     
     # part with reading SCHISM mesh
     schism_grid_file = 'hgrid.ll'
     schism_vgrid_file = 'vgrid.in'
-    schism = schism_grid(schism_grid_file, schism_vgrid_file, grid_dir)
+    schism = schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir)
     
     if bry == 'True':
         print('Making bry files for SCHISM')
-        make_boundary(schism, prefix, dates, dcrit, roms_dir)
+        make_boundary(schism, prefix, dates, dcrit, roms_dir, roms_grid_filename)
         
     if nudge == 'True':
         print('Making nudging files for SCHISM')
-        make_nudging(schism, prefix, dates, dcrit, roms_dir)
+        make_nudging(schism, prefix, dates, dcrit, roms_dir, roms_grid_filename)
         
     return    
         
@@ -491,8 +489,9 @@ if __name__=='__main__':
     parser.add_argument('--start_date', default='20200101', help='First history date (yyyymmdd)')
     parser.add_argument('--ndays', default=30,  type=int, help='number of days to process')
     parser.add_argument('--dcrit', default=700,  type=float, help='maximum distance for interpolation - if distance larger than dcrit, use closest value from ROMS grid, to avoid interpolating over land (should be slightly larger than ROMS grid resolution)')
-    parser.add_argument('--grid_dir', default='./', help='SCHISM grid directory')
+    parser.add_argument('--schism_grid_dir', default='./', help='SCHISM grid directory')
     parser.add_argument('--roms_dir', default='./', help='ROMS output directory')
+    parser.add_argument('--roms_grid_filename', default=None, help='ROMS grid filename (None if no grid required)')
     parser.add_argument('--bry', default=False, help='make boundary file')
     parser.add_argument('--nudge', default=False, help='make nudging file')
     parser.add_argument('--prefix', default='avg', help='roms prefix file (default avg) avg or his')
@@ -500,4 +499,5 @@ if __name__=='__main__':
     # First call the prog to create bry file with prefix his, and then again for nudge but now using avg as a prefix 
     args = parser.parse_args()
     dates = datetime.strptime(args.start_date,'%Y%m%d') + np.arange(args.ndays)*timedelta(days=1)
-    main(dates, args.prefix, args.bry, args.nudge, args.dcrit, args.grid_dir, args.roms_dir)
+    main(dates, args.prefix, args.bry, args.nudge, args.dcrit,
+         args.schism_grid_dir, args.roms_dir, args.roms_grid_filename)
