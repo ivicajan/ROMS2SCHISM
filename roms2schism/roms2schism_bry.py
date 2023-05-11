@@ -87,6 +87,7 @@ def roms_bbox(lon, lat, bbox):
     return i0, i1, j0, j1     
     
 def read_roms_grid(filein, bbox):
+    """Reads ROMS grid data from ROMS grid file or output."""
     roms = Bunch()
     nc = Dataset(filein,'r')
     lonr = nc.variables['lon_rho'][:]
@@ -94,12 +95,15 @@ def read_roms_grid(filein, bbox):
     roms.i0, roms.i1, roms.j0, roms.j1 = roms_bbox(lonr, latr, bbox)
     print('bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(roms.i0,roms.i1,roms.j0,roms.j1))
     roms.h = nc.variables['h'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
-    roms.angle = nc.variables['angle'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
+    # if east/north velocities not present, need to rotate and process from staggered velocities:
+    roms.rotate = not all([var in nc.variables for var in ['u_eastward', 'v_northward']])
+    if roms.rotate:
+        roms.angle = nc.variables['angle'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
     roms.lonr = lonr[(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
     roms.latr = latr[(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
     roms.maskr = nc.variables['mask_rho'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
     nc.close()
-    print('Done with reading roms grid file')
+    print('Done with reading roms grid')
     return roms
 
 def read_roms_data(filein, grid):
