@@ -347,7 +347,7 @@ def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
-    roms_grid = roms_grid_file(schism.b_bbox)
+    roms_grid = roms_grid_file(schism.b_bbox, roms_grid_filename)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
     roms_data = read_roms_files(roms_dir, roms_grid, prefix, dates)
@@ -421,7 +421,7 @@ def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_
     sponge_bbox = schism_bbox(sponge_x, sponge_y)
 
     # part to load ROMS grid for given subset
-    roms_grid = roms_grid_file(sponge_bbox)
+    roms_grid = roms_grid_file(sponge_bbox, roms_grid_filename)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
     roms_data = read_roms_files(roms_dir, roms_grid, prefix, dates)
