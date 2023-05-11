@@ -19,8 +19,6 @@ from datetime import datetime, timedelta
 from pyschism.mesh import Hgrid
 from pyschism.mesh.vgrid import Vgrid
 
-dcrit = 700  # if distance larger than dcrit [m] use closest value from the roms grid 
-             # (this avoids interpolating over land) and should be a bit larger than ROMS grid resolution
 wdir = './' 
 #hdir = '/home/ivica/AUSTRALIA/ROMS/cwa/archive/'
 hdir = '/mnt/qnap/OPERATIONAL/ROMS/CWA/archive/'
@@ -350,7 +348,7 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y):
     return weights, verts, XY, XYout, depth_interp
 
 
-def make_boundry(schism, prefix, dates):
+def make_boundry(schism, prefix, dates, dcrit = 700):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
@@ -415,7 +413,7 @@ def make_boundry(schism, prefix, dates):
     return
 
 
-def make_nudginig(schism, prefix, dates):
+def make_nudginig(schism, prefix, dates, dcrit = 700):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
@@ -469,7 +467,7 @@ def make_nudginig(schism, prefix, dates):
     save_nudging_nc('SAL_nu.nc', schism_salt, roms_data.date, np.array(OK))
 
 
-def main(dates, prefix, bry=False, nudge=False):    
+def main(dates, prefix, bry=False, nudge=False, dcrit = 700):
     # ## Actual start of the roms2schism interpolation
     
     # part with reading SCHISM mesh
@@ -479,11 +477,11 @@ def main(dates, prefix, bry=False, nudge=False):
     
     if bry == 'True':
         print('Making bry files for SCHISM')
-        make_boundry(schism, prefix, dates)
+        make_boundry(schism, prefix, dates, dcrit)
         
     if nudge == 'True':
         print('Making nudging files for SCHISM')
-        make_nudginig(schism, prefix, dates)
+        make_nudginig(schism, prefix, dates, dcrit)
         
     return    
         
@@ -494,6 +492,7 @@ if __name__=='__main__':
     parser = ArgumentParser()
     parser.add_argument('--start_date', default='20200101', help='First history date (yyyymmdd)')
     parser.add_argument('--ndays', default=30,  type=int, help='number of days to process')
+    parser.add_argument('--dcrit', default=700,  type=float, help='maximum distance for interpolation - if distance larger than dcrit, use closest value from ROMS grid, to avoid interpolating over land (should be slightly larger than ROMS grid resolution)')
     parser.add_argument('--bry', default=False, help='make boundry file')
     parser.add_argument('--nudge', default=False, help='make nudging file')
     parser.add_argument('--prefix', default='avg', help='roms prefix file (default avg) avg or his')
