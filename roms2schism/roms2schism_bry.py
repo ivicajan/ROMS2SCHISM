@@ -313,12 +313,10 @@ def save_nudging_nc(outfile, data, date, sponge_nodes):
     dst.close() 
     return
 
-def read_roms_files(roms_dir, roms_grid, prefix, dates):
+def read_roms_files(roms_dir, roms_grid, template, dates):
     # part for loading ROMS data for the subset, each day is in a separate file and has 1-hourly records
     for date in dates:
-        fname = os.path.join(roms_dir,'%d/perth_%s_%s.nc' %(int(date.strftime('%Y')), prefix, date.strftime('%Y%m%d')))
-        #if int(date.strftime('%Y')) == 2022:
-        #    fname = os.path.join(hdir,'perth_%s_%s.nc' %(prefix, date.strftime('%Y%m%d')))
+        fname = os.path.join(roms_dir, date.strftime(template))
         try: 
             new = read_roms_data(fname, roms_grid)
             if date == dates[0]:
@@ -329,13 +327,6 @@ def read_roms_files(roms_dir, roms_grid, prefix, dates):
             continue        
 
     return roms_data
-    
-def roms_grid_file(bbox, roms_grid_filename = None):
-    # part to load ROMS grid for given subset
-    roms_grid = read_roms_grid(roms_grid_filename, bbox)
-    
-    return roms_grid
-
 
 def spatial_interp(roms_grid, mask, coord_x, coord_y):
     # Prepare for spatial (2d) interpolation
@@ -350,14 +341,20 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y):
     return weights, verts, XY, XYout, depth_interp
 
 
-def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_filename = None):
+def make_boundary(schism, template, dates, dcrit = 700,
+                  roms_dir = './', roms_grid_filename = None):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
-    roms_grid = roms_grid_file(schism.b_bbox, roms_grid_filename)
+    if roms_grid_filename is not None:
+        fname = roms_grid_filename
+    else:
+        fname = os.path.join(roms_dir, dates[0].strftime(template))
+    roms_grid = read_roms_grid(fname, schism.b_bbox)
+
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
-    roms_data = read_roms_files(roms_dir, roms_grid, prefix, dates)
+    roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
     
     weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi)
 
@@ -415,7 +412,7 @@ def make_boundary(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid
     return
 
 
-def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_filename = None):
+def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './', roms_grid_filename = None):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
@@ -428,10 +425,14 @@ def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_
     sponge_bbox = schism_bbox(sponge_x, sponge_y)
 
     # part to load ROMS grid for given subset
-    roms_grid = roms_grid_file(sponge_bbox, roms_grid_filename)
+    if roms_grid_filename is not None:
+        fname = roms_grid_filename
+    else:
+        fname = os.path.join(roms_dir, dates[0].strftime(template))
+    roms_grid = read_roms_grid(fname, sponge_bbox)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
-    roms_data = read_roms_files(roms_dir, roms_grid, prefix, dates)
+    roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
       
     weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y)
 
@@ -469,7 +470,7 @@ def make_nudging(schism, prefix, dates, dcrit = 700, roms_dir = './', roms_grid_
     save_nudging_nc('SAL_nu.nc', schism_salt, roms_data.date, np.array(OK))
 
 
-def main(dates, prefix, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
+def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
          roms_dir = './', roms_grid_filename = None):
     # ## Actual start of the roms2schism interpolation
     
@@ -480,11 +481,11 @@ def main(dates, prefix, bry=False, nudge=False, dcrit = 700, schism_grid_dir = '
     
     if bry == 'True':
         print('Making bry files for SCHISM')
-        make_boundary(schism, prefix, dates, dcrit, roms_dir, roms_grid_filename)
+        make_boundary(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
         
     if nudge == 'True':
         print('Making nudging files for SCHISM')
-        make_nudging(schism, prefix, dates, dcrit, roms_dir, roms_grid_filename)
+        make_nudging(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
         
     return    
         
@@ -501,10 +502,10 @@ if __name__=='__main__':
     parser.add_argument('--roms_grid_filename', default=None, help='ROMS grid filename (None if no grid required)')
     parser.add_argument('--bry', default=False, help='make boundary file')
     parser.add_argument('--nudge', default=False, help='make nudging file')
-    parser.add_argument('--prefix', default='avg', help='roms prefix file (default avg) avg or his')
+    parser.add_argument('--template', default='model_avg_%Y%m%d.nc', help='roms output filename template')
     # For nudging you don't need hourly (his) data and faster approach (and better) is to use avg file
-    # First call the prog to create bry file with prefix his, and then again for nudge but now using avg as a prefix 
+    # First call the prog to create bry file with template for his, and then again for nudge but now using template for avg
     args = parser.parse_args()
     dates = datetime.strptime(args.start_date,'%Y%m%d') + np.arange(args.ndays)*timedelta(days=1)
-    main(dates, args.prefix, args.bry, args.nudge, args.dcrit,
+    main(dates, args.template, args.bry, args.nudge, args.dcrit,
          args.schism_grid_dir, args.roms_dir, args.roms_grid_filename)
