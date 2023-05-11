@@ -115,13 +115,16 @@ def read_roms_data(filein, grid):
     #print('loading subset i0=%d, i1=%d, j0=%d, j1=%d' %(i0,i1,j0,j1))
     roms.zeta = nc.variables['zeta'][:,(j0+1):(j1-1), (i0+1):(i1-1)]
     #print(np.shape(roms.zeta))
-    u = nc.variables['u'][:,:,(j0+1):(j1-1), i0:(i1-1)]
-    v = nc.variables['v'][:,:,j0:(j1-1), (i0+1):(i1-1)]
-    #print(np.shape(u))
-    #print(np.shape(v))
-    ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
-    vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
-    roms.u, roms.v = rot2d(ur, vr, grid.angle)
+    if grid.rotate:
+        # rotate and de-stagger velocities:
+        u = nc.variables['u'][:,:,(j0+1):(j1-1), i0:(i1-1)]
+        v = nc.variables['v'][:,:,j0:(j1-1), (i0+1):(i1-1)]
+        ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
+        vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
+        roms.u, roms.v = rot2d(ur, vr, grid.angle)
+    else:
+        roms.u = nc.variables['u_eastward'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        roms.v = nc.variables['v_northward'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.temp = nc.variables['temp'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.salt = nc.variables['salt'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.vtransform = nc.variables['Vtransform'][:]
