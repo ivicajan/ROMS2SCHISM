@@ -484,11 +484,11 @@ def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir =
     schism_vgrid_file = 'vgrid.in'
     schism = schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir, lonc, latc)
     
-    if bry == 'True':
+    if bry is True:
         print('Making bry files for SCHISM')
         make_boundary(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
         
-    if nudge == 'True':
+    if nudge is True:
         print('Making nudging files for SCHISM')
         make_nudging(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
         
