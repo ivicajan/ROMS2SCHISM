@@ -331,7 +331,7 @@ def read_roms_files(roms_dir, roms_grid, template, dates):
     print('Done with reading roms files')
     return roms_data
 
-def spatial_interp(roms_grid, mask, coord_x, coord_y, lonc, latc):
+def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     # Prepare for spatial (2d) interpolation
     x2, y2 = transform_ll_to_cpp(roms_grid.lonr, roms_grid.latr,
                                  lonc, latc) # transform to [m], the same projection as SCHISM
@@ -361,7 +361,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
     
-    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, lonc, latc)
+    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
 
     # init outputs 
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -440,7 +440,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
       
-    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, lonc, latc)
+    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
 
     # initi outputs nudgining
     nt = len(roms_data.date)  # need to loop over time for each record
