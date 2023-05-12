@@ -249,16 +249,13 @@ def closest_node(node, nodes):
 
 def vert_interp(temp_interp, roms_depths_at_schism_node, schism_depth):
     schism_temp = np.zeros((np.size(schism_depth,0), np.size(schism_depth,1)))  # schism is using (node, level)
-    tmp_depth = np.zeros((roms_depths_at_schism_node.shape[0]+2))
-    tmp_var  = np.zeros((roms_depths_at_schism_node.shape[0]+2))
+    tmp_depth = np.zeros((roms_depths_at_schism_node.shape[0]))
+    tmp_var  = np.zeros((roms_depths_at_schism_node.shape[0]))
     for n in range(0, np.size(schism_depth,0)):
-        tmp_depth[1:-1] = roms_depths_at_schism_node[:,n]
-        tmp_depth[0] = roms_depths_at_schism_node[0,n] - 50
-        tmp_depth[-1] = roms_depths_at_schism_node[-1,n] + 10
-        tmp_var[1:-1] = temp_interp[:,n]
-        tmp_var[0] = temp_interp[0,n]
-        tmp_var[-1]  = temp_interp[-1,n]
-        f = interp1d(tmp_depth, tmp_var, kind='linear')
+        tmp_depth = roms_depths_at_schism_node[:,n]
+        tmp_var = temp_interp[:,n]
+        f = interp1d(tmp_depth, tmp_var, kind='linear', bounds_error = False,
+                     fill_value = (tmp_var[0], tmp_var[-1]))
         schism_temp[n,:] = f(schism_depth[n,:])
     return schism_temp
 
