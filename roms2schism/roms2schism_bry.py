@@ -316,7 +316,7 @@ def save_nudging_nc(outfile, data, date, sponge_nodes):
     return
 
 def read_roms_files(roms_dir, roms_grid, template, dates):
-    # part for loading ROMS data for the subset, each day is in a separate file and has 1-hourly records
+    # part for loading ROMS data for the subset
     for date in dates:
         fname = os.path.join(roms_dir, date.strftime(template))
         try: 
@@ -328,6 +328,7 @@ def read_roms_files(roms_dir, roms_grid, template, dates):
         except:
             continue        
 
+    print('Done with reading roms files')
     return roms_data
 
 def spatial_interp(roms_grid, mask, coord_x, coord_y, lonc, latc):
