@@ -34,7 +34,11 @@ def readgr3(filename):
         # first load nodes and values 
         # not using nn
         tmp=list(islice(fid,out.nn));
-        node_id,out.x,out.y,out.z=np.loadtxt(tmp, dtype={'names':('n','x','y','z'),'formats':('i4','f8','f8','f8')}, unpack=True);
+        node_id,out.x,out.y,out.z=np.loadtxt(tmp,
+                                             dtype={'names':('n','x','y','z'),
+                                                    'formats':('i4','f8','f8','f8')},
+                                             usecols = (0,1,2,3),
+                                             unpack=True)
         del node_id;
         # elements
         tmp=list(islice(fid,out.ne));
