@@ -12,7 +12,7 @@ from munch import Munch as Bunch
 from netCDF4 import Dataset, num2date, date2num
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, cKDTree
 
 from datetime import datetime, timedelta
 
@@ -231,7 +231,7 @@ def calc_weights(xyin, xyout):
     verts = tri.simplices[s]
     return weights, verts 
 
-def interp2D(z, weights, verts, XY, XYout, dcrit):
+def interp2D(z, weights, verts, XY, kdtree, XYout, dcrit):
     """
     Perform the interpolation
     """    
@@ -243,14 +243,13 @@ def interp2D(z, weights, verts, XY, XYout, dcrit):
         dx = np.min(np.abs(XY[verts[i]][:,0]- XYout[i][0]))
         dy = np.min(np.abs(XY[verts[i]][:,1]- XYout[i][1]))
         if np.logical_or(dx>dcrit, dy>dcrit):
-            closest = closest_node(XYout[i], XY)
+            closest = closest_node(XYout[i], kdtree)
             out[i] = z[closest]
     return out
 
-def closest_node(node, nodes):
-    nodes = np.asarray(nodes)
-    dist_2 = np.sum((nodes - node)**2, axis=1)
-    return np.argmin(dist_2)
+def closest_node(node, kdtree):
+    r, i = kdtree.query(node)
+    return i
 
 def vert_interp(temp_interp, roms_depths_at_schism_node, schism_depth):
     schism_temp = np.zeros((np.size(schism_depth,0), np.size(schism_depth,1)))  # schism is using (node, level)
@@ -338,13 +337,14 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     x2, y2 = transform_ll_to_cpp(roms_grid.lonr, roms_grid.latr,
                                  lonc, latc) # transform to [m], the same projection as SCHISM
     XY = np.vstack((x2[mask], y2[mask])).T
+    kdtree = cKDTree(XY)
     XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
     weights, verts = calc_weights(XY, XYout)
     
     # interp 2D depth which is time invariant
     depth_interp = interp2D(roms_grid.h[mask], weights, verts, XY, XYout, dcrit)
     
-    return weights, verts, XY, XYout, depth_interp
+    return weights, verts, XY, kdtree, XYout, depth_interp
 
 
 def make_boundary(schism, template, dates, dcrit = 700,
@@ -363,7 +363,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
     
-    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
+    weights, verts, XY, kdtree, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
 
     # init outputs 
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -377,35 +377,41 @@ def make_boundary(schism, template, dates, dcrit = 700,
     print('total steps: %d ' %nt, end='>')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
-        schism_zeta[it,:,0,0] = interp2D(roms_data.zeta[it, mask_OK], weights, verts, XY, XYout, dcrit)
+        schism_zeta[it,:,0,0] = interp2D(roms_data.zeta[it, mask_OK], weights, verts, XY, kdtree,
+                                         XYout, dcrit)
         # compute depths for each ROMS levels at the specific SCHISM locations
         roms_depths_at_schism_node = roms_depth_point(schism_zeta[it,:,0,0], depth_interp,
-        roms_data.vtransform, roms_data.sc_r, roms_data.Cs_r, roms_data.hc)
+                                                      roms_data.vtransform, roms_data.sc_r,
+                                                      roms_data.Cs_r, roms_data.hc)
         # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
         temp_interp = np.zeros((Nz, schism.NOP))   # this is temp at ROMS levels
         for k in range(0, Nz):   
-            temp_interp[k,:] = interp2D(roms_data.temp[it,k,][mask_OK], weights, verts, XY, XYout, dcrit)
+            temp_interp[k,:] = interp2D(roms_data.temp[it,k,][mask_OK], weights, verts,
+                                        XY, kdtree, XYout, dcrit)
         # interpolate in vertical to SCHISM depths
         schism_temp[it,:,:,0] = vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
 
         # interp salt variable 
         temp_interp = np.zeros((Nz, schism.NOP))
         for k in range(0,Nz):
-            temp_interp[k,:] = interp2D(roms_data.salt[it,k,][mask_OK], weights, verts, XY, XYout, dcrit)
+            temp_interp[k,:] = interp2D(roms_data.salt[it,k,][mask_OK], weights, verts,
+                                        XY, kdtree, XYout, dcrit)
         # now you need to interp temp for each NOP at SCHISM depths
         schism_salt[it,:,:,0] = vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
 
         # interp u variable 
         temp_interp = np.zeros((Nz, schism.NOP))
         for k in range(0,Nz):
-            temp_interp[k,:] = interp2D(roms_data.u[it,k,][mask_OK], weights, verts, XY, XYout, dcrit)
+            temp_interp[k,:] = interp2D(roms_data.u[it,k,][mask_OK], weights, verts, XY,
+                                        kdtree, XYout, dcrit)
         # now you need to interp temp for each NOP at SCHISM depths
         schism_uv[it,:,:,0] = vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
 
         # interp v variable 
         temp_interp = np.zeros((Nz, schism.NOP))
         for k in range(0,Nz):
-            temp_interp[k,:] = interp2D(roms_data.v[it,k,][mask_OK], weights, verts, XY, XYout, dcrit)
+            temp_interp[k,:] = interp2D(roms_data.v[it,k,][mask_OK], weights, verts, XY,
+                                        kdtree, XYout, dcrit)
         # now you need to interp temp for each NOP at SCHISM depths
         schism_uv[it,:,:,1] = vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
     print('Done interpolating')
@@ -442,7 +448,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
       
-    weights, verts, XY, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
+    weights, verts, XY, kdtree, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
 
     # initi outputs nudgining
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -455,20 +461,23 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
     print('Total steps: %d' %nt, end='>')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
-        schism_zeta[it,:,0,0] = interp2D(roms_data.zeta[it, mask_OK], weights, verts, XY, XYout, dcrit)
+        schism_zeta[it,:,0,0] = interp2D(roms_data.zeta[it, mask_OK], weights, verts, XY,
+                                         kdtree, XYout, dcrit)
         # compute depths for each ROMS levels at the specific SCHISM locations
         roms_depths_at_schism_node = roms_depth_point(schism_zeta[it,:,0,0], depth_interp,
         roms_data.vtransform, roms_data.sc_r, roms_data.Cs_r, roms_data.hc)
         # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
         temp_interp = np.zeros((Nz, Np))   # this is temp at ROMS levels
         for k in range(0, Nz):   
-            temp_interp[k,:] = interp2D(roms_data.temp[it,k,][mask_OK], weights, verts, XY, XYout, dcrit)
+            temp_interp[k,:] = interp2D(roms_data.temp[it,k,][mask_OK], weights, verts, XY,
+                                        kdtree, XYout, dcrit)
         # interpolate in vertical to SCHISM depths
         schism_temp[it,:,:,0] = vert_interp(temp_interp, roms_depths_at_schism_node, -sponge_depth)
         # interp salt variable 
         temp_interp = np.zeros((Nz, Np))
         for k in range(0,Nz):
-            temp_interp[k,:] = interp2D(roms_data.salt[it,k,][mask_OK], weights, verts, XY, XYout, dcrit)
+            temp_interp[k,:] = interp2D(roms_data.salt[it,k,][mask_OK], weights, verts, XY,
+                                        kdtree, XYout, dcrit)
         # now you need to interp temp for each NOP at SCHISM depths
         schism_salt[it,:,:,0] = vert_interp(temp_interp, roms_depths_at_schism_node, -sponge_depth)
 
