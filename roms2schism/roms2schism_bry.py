@@ -110,27 +110,28 @@ def read_roms_grid(filein, bbox):
     print('Done with reading roms grid')
     return roms
 
-def read_roms_data(filein, grid):
+def read_roms_data(filein, grid, num_times = None):
     roms = Bunch()
     nc = Dataset(filein,'r')
     times = nc.variables['ocean_time']
-    roms.date = num2date(times[:], units=times.units, calendar='proleptic_gregorian')
+    nt = np.size(times) if num_times is None else num_times
+    roms.date = num2date(times[:nt], units=times.units, calendar='proleptic_gregorian')
     i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
     #print('loading subset i0=%d, i1=%d, j0=%d, j1=%d' %(i0,i1,j0,j1))
-    roms.zeta = nc.variables['zeta'][:,(j0+1):(j1-1), (i0+1):(i1-1)]
+    roms.zeta = nc.variables['zeta'][:nt,(j0+1):(j1-1), (i0+1):(i1-1)]
     #print(np.shape(roms.zeta))
     if grid.rotate:
         # rotate and de-stagger velocities:
-        u = nc.variables['u'][:,:,(j0+1):(j1-1), i0:(i1-1)]
-        v = nc.variables['v'][:,:,j0:(j1-1), (i0+1):(i1-1)]
+        u = nc.variables['u'][:nt,:,(j0+1):(j1-1), i0:(i1-1)]
+        v = nc.variables['v'][:nt,:,j0:(j1-1), (i0+1):(i1-1)]
         ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
         vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
         roms.u, roms.v = rot2d(ur, vr, grid.angle)
     else:
-        roms.u = nc.variables['u_eastward'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-        roms.v = nc.variables['v_northward'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    roms.temp = nc.variables['temp'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    roms.salt = nc.variables['salt'][:,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        roms.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        roms.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+    roms.temp = nc.variables['temp'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+    roms.salt = nc.variables['salt'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.vtransform = nc.variables['Vtransform'][:]
     roms.sc_r = nc.variables['s_rho'][:]
     roms.Cs_r = nc.variables['Cs_r'][:]
