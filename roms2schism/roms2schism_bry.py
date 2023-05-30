@@ -342,7 +342,7 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     weights, verts = calc_weights(XY, XYout)
     
     # interp 2D depth which is time invariant
-    depth_interp = interp2D(roms_grid.h[mask], weights, verts, XY, XYout, dcrit)
+    depth_interp = interp2D(roms_grid.h[mask], weights, verts, XY, kdtree, XYout, dcrit)
     
     return weights, verts, XY, kdtree, XYout, depth_interp
 
