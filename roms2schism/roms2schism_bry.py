@@ -341,9 +341,9 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     x2, y2 = transform_ll_to_cpp(roms_grid.lonr, roms_grid.latr,
                                  lonc, latc) # transform to [m], the same projection as SCHISM
     interp.XY = np.vstack((x2[mask], y2[mask])).T
-    interp.kdtree = cKDTree(XY)
+    interp.kdtree = cKDTree(interp.XY)
     interp.XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
-    interp.weights, interp.verts, interp.simplices = calc_weights(XY, XYout)
+    interp.weights, interp.verts, interp.simplices = calc_weights(interp.XY, interp.XYout)
     
     # interp 2D depth which is time invariant
     interp.depth_interp = interp2D(roms_grid.h[mask], interp, dcrit)
