@@ -220,7 +220,7 @@ def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './',
     print('Computing SCHISM zcor is done!')    
     return schism
 
-def calc_weights(xyin, xyout, kdtree):
+def calc_weights(xyin, xyout, dcrit, kdtree):
     tri = Delaunay(xyin)    
     s = tri.find_simplex(xyout)
     # Compute the barycentric coordinates (these are the weights)
@@ -349,7 +349,7 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     interp.XY = np.vstack((x2[mask], y2[mask])).T
     interp.kdtree = cKDTree(interp.XY)
     interp.XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
-    interp.weights, interp.verts, interp.use_closest, interp.closest_in = calc_weights(interp.XY, interp.XYout, interp.kdtree)
+    interp.weights, interp.verts, interp.use_closest, interp.closest_in = calc_weights(interp.XY, interp.XYout, dcrit, interp.kdtree)
     
     # interp 2D depth which is time invariant
     interp.depth_interp = interp2D(roms_grid.h[mask], interp, dcrit)
