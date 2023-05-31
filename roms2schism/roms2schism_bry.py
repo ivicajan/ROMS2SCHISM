@@ -220,7 +220,7 @@ def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './',
     print('Computing SCHISM zcor is done!')    
     return schism
 
-def calc_weights(xyin, xyout):
+def calc_weights(xyin, xyout, kdtree):
     tri = Delaunay(xyin)    
     s = tri.find_simplex(xyout)
     # Compute the barycentric coordinates (these are the weights)
@@ -230,26 +230,32 @@ def calc_weights(xyin, xyout):
     weights = np.c_[b, 1 - b.sum(axis=1)]    
     # These are the vertices of the output points
     verts = tri.simplices[s]
-    return weights, verts, s
+
+    npt = np.shape(xyout)[0]    # number of output locations
+    use_closest = []            # list of point indices to do nearest neighbour interpolation on
+    closest_in = []             # indices of closest input points
+    for i in range(0, npt):
+        if s[i] >=0:
+            # check for the crtical distance
+            dx = np.min(np.abs(xyin[verts[i]][:,0]- xyout[i][0]))
+            dy = np.min(np.abs(xyin[verts[i]][:,1]- xyout[i][1]))
+            closest = np.logical_or(dx>dcrit, dy>dcrit)
+        else: # point is outside the triangulation
+            closest = True
+        if closest:
+            use_closest.append(i)
+            r, c = kdtree.query(xyout[i])
+            closest_in.append(c)
+
+    return weights, verts, use_closest, closest_in
 
 def interp2D(z, interp, dcrit):
     """
     Perform the interpolation
     """    
     out = (z[interp.verts]*interp.weights).sum(axis=1)
-
-    npt = np.shape(interp.XYout)[0]    # number of output locations
-    for i in range(0, npt):
-        if interp.simplices[i] >=0:
-            # check for the crtical distance
-            dx = np.min(np.abs(interp.XY[interp.verts[i]][:,0]- interp.XYout[i][0]))
-            dy = np.min(np.abs(interp.XY[interp.verts[i]][:,1]- interp.XYout[i][1]))
-            use_closest = np.logical_or(dx>dcrit, dy>dcrit)
-        else: # point is outside the triangulation
-            use_closest = True
-        if use_closest:
-            r, closest = interp.kdtree.query(interp.XYout[i])
-            out[i] = z[closest]
+    for i, closest in zip(interp.use_closest, interp.closest_in):
+        out[i] = z[closest]
 
     return out
 
@@ -343,7 +349,7 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     interp.XY = np.vstack((x2[mask], y2[mask])).T
     interp.kdtree = cKDTree(interp.XY)
     interp.XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
-    interp.weights, interp.verts, interp.simplices = calc_weights(interp.XY, interp.XYout)
+    interp.weights, interp.verts, interp.use_closest, interp.closest_in = calc_weights(interp.XY, interp.XYout, interp.kdtree)
     
     # interp 2D depth which is time invariant
     interp.depth_interp = interp2D(roms_grid.h[mask], interp, dcrit)
