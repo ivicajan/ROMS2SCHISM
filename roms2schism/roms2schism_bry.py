@@ -221,7 +221,7 @@ def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './',
 
 def calc_weights(xyin, xyout):
     tri = Delaunay(xyin)    
-    s = tri.find_simplex(xyout)    
+    s = tri.find_simplex(xyout)
     # Compute the barycentric coordinates (these are the weights)
     X = tri.transform[s,:2]
     Y = xyout - tri.transform[s,2]
@@ -229,27 +229,28 @@ def calc_weights(xyin, xyout):
     weights = np.c_[b, 1 - b.sum(axis=1)]    
     # These are the vertices of the output points
     verts = tri.simplices[s]
-    return weights, verts 
+    return weights, verts, s
 
-def interp2D(z, weights, verts, XY, kdtree, XYout, dcrit):
+def interp2D(z, weights, verts, simplices, XY, kdtree, XYout, dcrit):
     """
     Perform the interpolation
     """    
     out = (z[verts]*weights).sum(axis=1)
-    # check for the crtical distance
+
     npt = np.shape(XYout)[0]    # number of output locations
-
     for i in range(0, npt):
-        dx = np.min(np.abs(XY[verts[i]][:,0]- XYout[i][0]))
-        dy = np.min(np.abs(XY[verts[i]][:,1]- XYout[i][1]))
-        if np.logical_or(dx>dcrit, dy>dcrit):
-            closest = closest_node(XYout[i], kdtree)
+        if simplices[i] >=0:
+            # check for the crtical distance
+            dx = np.min(np.abs(XY[verts[i]][:,0]- XYout[i][0]))
+            dy = np.min(np.abs(XY[verts[i]][:,1]- XYout[i][1]))
+            use_closest = np.logical_or(dx>dcrit, dy>dcrit)
+        else: # point is outside the triangulation
+            use_closest = True
+        if use_closest:
+            r, closest = kdtree.query(XYout[i])
             out[i] = z[closest]
-    return out
 
-def closest_node(node, kdtree):
-    r, i = kdtree.query(node)
-    return i
+    return out
 
 def vert_interp(temp_interp, roms_depths_at_schism_node, schism_depth):
     schism_temp = np.zeros((np.size(schism_depth,0), np.size(schism_depth,1)))  # schism is using (node, level)
@@ -339,13 +340,12 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     XY = np.vstack((x2[mask], y2[mask])).T
     kdtree = cKDTree(XY)
     XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
-    weights, verts = calc_weights(XY, XYout)
+    weights, verts, simplices = calc_weights(XY, XYout)
     
     # interp 2D depth which is time invariant
-    depth_interp = interp2D(roms_grid.h[mask], weights, verts, XY, kdtree, XYout, dcrit)
+    depth_interp = interp2D(roms_grid.h[mask], weights, verts, simplices, XY, kdtree, XYout, dcrit)
     
-    return weights, verts, XY, kdtree, XYout, depth_interp
-
+    return weights, verts, simplices, XY, kdtree, XYout, depth_interp
 
 def make_boundary(schism, template, dates, dcrit = 700,
                   roms_dir = './', roms_grid_filename = None,
@@ -363,7 +363,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
     
-    weights, verts, XY, kdtree, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
+    weights, verts, simplices, XY, kdtree, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
 
     # init outputs 
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -448,7 +448,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
 
     roms_data = read_roms_files(roms_dir, roms_grid, template, dates)
       
-    weights, verts, XY, kdtree, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
+    weights, verts, simplices, XY, kdtree, XYout, depth_interp = spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
 
     # initi outputs nudgining
     nt = len(roms_data.date)  # need to loop over time for each record
