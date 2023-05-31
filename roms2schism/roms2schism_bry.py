@@ -242,8 +242,8 @@ def interp2D(z, interp, dcrit):
     for i in range(0, npt):
         if interp.simplices[i] >=0:
             # check for the crtical distance
-            dx = np.min(np.abs(interp.XY[verts[i]][:,0]- interp.XYout[i][0]))
-            dy = np.min(np.abs(interp.XY[verts[i]][:,1]- interp.XYout[i][1]))
+            dx = np.min(np.abs(interp.XY[interp.verts[i]][:,0]- interp.XYout[i][0]))
+            dy = np.min(np.abs(interp.XY[interp.verts[i]][:,1]- interp.XYout[i][1]))
             use_closest = np.logical_or(dx>dcrit, dy>dcrit)
         else: # point is outside the triangulation
             use_closest = True
