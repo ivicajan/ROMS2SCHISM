@@ -5,9 +5,9 @@ import os
 import numpy as np
 from progressbar import progressbar
 from netCDF4 import Dataset, date2num
-import schism as sm
-import roms as rs
-import interpolation as itp
+from roms2schism import schism as sm
+from roms2schism import roms as rs
+from roms2schism import interpolation as itp
 
 def save_nudging_nc(outfile, data, date, sponge_nodes):
     '''

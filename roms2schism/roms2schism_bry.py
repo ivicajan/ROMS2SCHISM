@@ -6,6 +6,9 @@ warnings.filterwarnings("ignore")
 
 import numpy as np
 from datetime import timedelta
+from roms2schism import schism as sm
+from roms2schism import boundary as bdy
+from roms2schism import nudging as ndg
 
 def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
          roms_dir = './', roms_grid_filename = None, lonc = 175., latc = -37.):
@@ -14,15 +17,15 @@ def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir =
     # part with reading SCHISM mesh
     schism_grid_file = 'hgrid.ll'
     schism_vgrid_file = 'vgrid.in'
-    schism = schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir, lonc, latc)
+    schism = sm.schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir, lonc, latc)
     
     if bry is True:
         print('Making bry files for SCHISM')
-        make_boundary(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
+        bdy.make_boundary(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
         
     if nudge is True:
         print('Making nudging files for SCHISM')
-        make_nudging(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
+        ndg.make_nudging(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
         
     return    
 

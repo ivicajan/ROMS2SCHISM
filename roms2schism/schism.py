@@ -6,7 +6,7 @@ import numpy as np
 from munch import Munch as Bunch
 from pyschism.mesh import Hgrid
 from pyschism.mesh.vgrid import Vgrid
-from geometry import transform_ll_to_cpp
+from roms2schism.geometry import transform_ll_to_cpp
 
 def readgr3(filename):
     from itertools import islice;

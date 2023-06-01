@@ -5,9 +5,9 @@ import os
 import numpy as np
 from netCDF4 import Dataset, num2date, date2num
 from progressbar import progressbar
-import schism as sm
-import roms as rs
-import interpolation as itp
+from roms2schism import schism as sm
+from roms2schism import roms as rs
+from roms2schism import interpolation as itp
 
 def save_boundary_nc(outfile, data, date, schism):
     '''
