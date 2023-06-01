@@ -52,6 +52,8 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     side_x = 0.5 * (schism.xi[schism.sides[:,0]] + schism.xi[schism.sides[:,1]])
     side_y = 0.5 * (schism.yi[schism.sides[:,0]] + schism.yi[schism.sides[:,1]])
     side_interp = itp.spatial_interp(roms_grid,mask_OK, side_x, side_y, dcrit, lonc, latc)
+    # compute elt_x, elt_y (centroids)
+    elt_interp = itp.spatial_interp(roms_grid,mask_OK, elt_x, elt_y, dcrit, lonc, latc)
 
     Nz = len(roms_data.Cs_r)  # number of ROMS levels
     nnodes = len(schism.xi)   # number of SCHISM nodes

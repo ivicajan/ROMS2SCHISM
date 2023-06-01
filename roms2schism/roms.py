@@ -82,6 +82,8 @@ def read_roms_data(filein, grid, num_times = None):
     roms.vtransform = nc.variables['Vtransform'][:]
     roms.sc_r = nc.variables['s_rho'][:]
     roms.Cs_r = nc.variables['Cs_r'][:]
+    roms.sc_w = nc.variables['s_w'][:]
+    roms.Cs_w = nc.variables['Cs_w'][:]
     roms.hc = nc.variables['hc'][:]
     nc.close()
     #print(np.shape(roms.temp))
