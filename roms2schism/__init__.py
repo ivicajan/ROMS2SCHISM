@@ -1,3 +1,3 @@
-__all__ = ['boundary', 'geometry', 'interpolation',
+__all__ = ['boundary', 'geometry', 'hotstart', 'interpolation',
            'nudging', 'roms2schism_bry', 'roms', 'schism']
 from . import *
