@@ -48,11 +48,11 @@ def spatial_interp(roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
     interp.weights, interp.verts, interp.use_closest, interp.closest_in = calc_weights(interp.XY, interp.XYout, dcrit, interp.kdtree)
     
     # interp 2D depth which is time invariant
-    interp.depth_interp = interp2D(roms_grid.h[mask], interp, dcrit)
+    interp.depth_interp = interp2D(roms_grid.h[mask], interp)
     
     return interp
 
-def interp2D(z, interp, dcrit):
+def interp2D(z, interp):
     """
     Perform the interpolation
     """    
