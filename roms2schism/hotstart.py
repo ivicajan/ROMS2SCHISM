@@ -3,7 +3,6 @@
 
 import os
 import numpy as np
-from roms2schism import schism as sm
 from roms2schism import roms as rs
 from roms2schism import interpolation as itp
 from progressbar import progressbar

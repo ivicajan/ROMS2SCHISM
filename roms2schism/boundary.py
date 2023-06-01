@@ -5,7 +5,6 @@ import os
 import numpy as np
 from netCDF4 import Dataset, num2date, date2num
 from progressbar import progressbar
-from roms2schism import schism as sm
 from roms2schism import roms as rs
 from roms2schism import interpolation as itp
 
