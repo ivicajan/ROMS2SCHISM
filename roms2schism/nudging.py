@@ -72,8 +72,9 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
         # get first zeta as I need it for depth calculation
         schism_zeta[it,:,0,0] = itp.interp2D(roms_data.zeta[it, mask_OK], interp)
         # compute depths for each ROMS levels at the specific SCHISM locations
-        roms_depths_at_schism_node = roms_depth_point(schism_zeta[it,:,0,0], depth_interp,
-        roms_data.vtransform, roms_data.sc_r, roms_data.Cs_r, roms_data.hc)
+        roms_depths_at_schism_node = roms_depth_point(schism_zeta[it,:,0,0], interp.depth_interp,
+                                                      roms_data.vtransform, roms_data.sc_r,
+                                                      roms_data.Cs_r, roms_data.hc)
         # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
         temp_interp = np.zeros((Nz, Np))   # this is temp at ROMS levels
         for k in range(0, Nz):   
