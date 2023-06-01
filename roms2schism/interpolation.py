@@ -4,6 +4,7 @@
 import numpy as np
 from scipy.spatial import Delaunay, cKDTree
 from scipy.interpolate import interp1d
+from munch import Munch as Bunch
 
 def calc_weights(xyin, xyout, dcrit, kdtree):
     tri = Delaunay(xyin)    
