@@ -3,6 +3,7 @@
 
 import os
 import numpy as np
+from netCDF4 import Dataset
 from roms2schism import roms as rs
 from roms2schism import interpolation as itp
 from progressbar import progressbar
