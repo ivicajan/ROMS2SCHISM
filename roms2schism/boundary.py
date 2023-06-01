@@ -76,7 +76,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
         for k in range(0, Nz):   
             temp_interp[k,:] = itp.interp2D(roms_data.temp[it,k,][mask_OK], interp)
         # interpolate in vertical to SCHISM depths
-        schism_temp[it,:,:,0] = vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
+        schism_temp[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
 
         # interp salt variable 
         temp_interp = np.zeros((Nz, schism.NOP))
