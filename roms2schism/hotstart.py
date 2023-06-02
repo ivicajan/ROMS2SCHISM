@@ -65,9 +65,9 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     nelts = len(schism.elements) # number of SCHISM elements
 
     schism_node_depth = schism.depth # schism depths at the nodes [nnodes, nvrt]
-    schism_side_depth = 0.5 * (schism_node_depth[schism.sides[:,0]] + \
-                               schism_node_depth[schism.sides[:,1]])
-    schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed()])
+    schism_side_depth = 0.5 * (schism_node_depth[schism.sides[:,0],:] + \
+                               schism_node_depth[schism.sides[:,1],:])
+    schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed(),:], axis = 0)
                                  for nodes in schism.elements])
 
     schism_zeta = np.zeros(nnodes) # zeta is also needed to compute ROMS depths
