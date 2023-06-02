@@ -9,25 +9,26 @@ from roms2schism import interpolation as itp
 from progressbar import progressbar
 
 def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
-                     su2_data, sv2_data,
+                     su2_data, sv2_data, w_data,
                      schism):
 
     dst = Dataset(outfile, "w", format="NETCDF4")
 
     #dimensions
-    dst.createDimension('nNodes', len(eta2_data))
-    dst.createDimension('nSides', su2_data.shape[0])
-    dst.createDimension('nLevels', su2_data.shape[1])
+    dst.createDimension('node', len(eta2_data))
+    dst.createDimension('elem', w_data.shape[0])
+    dst.createDimension('side', su2_data.shape[0])
+    dst.createDimension('nVert', su2_data.shape[1])
 
     #variables
-    dst.createVariable('eta2', 'f', ('nNodes'))
+    dst.createVariable('eta2', 'f', ('node'))
     dst['eta2'][:] = eta2_data
-    dst.createVariable('su2', 'f', ('nSides, nLevels'))
+    dst.createVariable('su2', 'f', ('side, nVert'))
     dst['su2'][:,:] = su2_data
-    dst.createVariable('sv2', 'f', ('nSides, nLevels'))
+    dst.createVariable('sv2', 'f', ('side, nVert'))
     dst['sv2'][:,:] = sv2_data
-
-    # TODO
+    dst.createVariable('we', 'f', ('elem, nVert'))
+    dst['we'][:,:] = w_data
 
     dst.close()
 
