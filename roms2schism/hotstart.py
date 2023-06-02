@@ -21,14 +21,21 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     dst.createDimension('nVert', su2_data.shape[1])
 
     #variables
-    dst.createVariable('eta2', 'f', ('node'))
+    eta2 = dst.createVariable('eta2', 'f', ('node'))
     dst['eta2'][:] = eta2_data
-    dst.createVariable('su2', 'f', ('side', 'nVert'))
+    eta2.long_name = "elevation at nodes at current timestep"
+
+    su2 = dst.createVariable('su2', 'f', ('side', 'nVert'))
     dst['su2'][:,:] = su2_data
-    dst.createVariable('sv2', 'f', ('side', 'nVert'))
+    su2.long_name = "u-velocity at side centres"
+
+    sv2 = dst.createVariable('sv2', 'f', ('side', 'nVert'))
     dst['sv2'][:,:] = sv2_data
-    dst.createVariable('we', 'f', ('elem', 'nVert'))
+    sv2.long_name = "v-velocity at side centres"
+
+    we = dst.createVariable('we', 'f', ('elem', 'nVert'))
     dst['we'][:,:] = w_data
+    we.long_name = "vertical velocity at element centres"
 
     dst.close()
 
