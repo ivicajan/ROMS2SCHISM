@@ -34,8 +34,8 @@ def readgr3(filename):
         fid.close();
         return out
 
-def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './',
-                lonc = 175., latc = -37.):
+def schism_grid(schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
+                schism_grid_dir = './', lonc = 175., latc = -37.):
     schism = Bunch()
     # get schism mesh
     schism_mesh = os.path.join(schism_grid_dir, schism_grid_file)
