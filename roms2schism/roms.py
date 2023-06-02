@@ -57,7 +57,7 @@ def read_roms_grid(filein, bbox):
     print('Done with reading roms grid')
     return roms
 
-def read_roms_data(filein, grid, num_times = None):
+def read_roms_data(filein, grid, num_times = None, get_w = False):
     roms = Bunch()
     nc = Dataset(filein,'r')
     times = nc.variables['ocean_time']
@@ -77,7 +77,8 @@ def read_roms_data(filein, grid, num_times = None):
     else:
         roms.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
         roms.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    roms.w = nc.variables['w'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+    if get_w:
+        roms.w = nc.variables['w'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.temp = nc.variables['temp'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.salt = nc.variables['salt'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.vtransform = nc.variables['Vtransform'][:]
@@ -91,7 +92,7 @@ def read_roms_data(filein, grid, num_times = None):
     print('Done reading roms data file: %s' %filein)
     return roms
 
-def roms_append(old, new):
+def roms_append(old, new, get_w = False):
     ''' 
     appends variables from new dictionary into old along axis 0 (time)
     '''
@@ -100,16 +101,17 @@ def roms_append(old, new):
     out.zeta = np.append(old.zeta, new.zeta, axis=0)
     out.u = np.append(old.u, new.u, axis=0)
     out.v = np.append(old.v, new.v, axis=0)
+    if get_w: np.append(old.w, new.w, axis=0)
     out.temp = np.append(old.temp, new.temp, axis=0)
     out.salt = np.append(old.salt, new.salt, axis=0)
     return out
 
-def read_roms_files(roms_dir, roms_grid, template, dates):
+def read_roms_files(roms_dir, roms_grid, template, dates, get_w = False):
     # part for loading ROMS data for the subset
     for date in dates:
         fname = os.path.join(roms_dir, date.strftime(template))
         try: 
-            new = read_roms_data(fname, roms_grid)
+            new = read_roms_data(fname, roms_grid, get_w)
             if date == dates[0]:
                 roms_data = new
             else:
