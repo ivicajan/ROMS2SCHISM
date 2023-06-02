@@ -77,6 +77,7 @@ def read_roms_data(filein, grid, num_times = None):
     else:
         roms.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
         roms.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+    roms.w = nc.variables['w'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.temp = nc.variables['temp'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.salt = nc.variables['salt'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
     roms.vtransform = nc.variables['Vtransform'][:]
