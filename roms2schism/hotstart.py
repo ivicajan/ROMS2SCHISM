@@ -78,11 +78,6 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     schism_elt_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], elt_interp)
     schism_side_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], side_interp)
 
-    schism_temp = np.zeros((nnodes, schism.nvrt))
-    schism_salt = np.zeros((nnodes, schism.nvrt))
-    schism_su2 = np.zeros((nsides, schism.nvrt))
-    schism_sv2 = np.zeros((nsides, schism.nvrt))
-
     roms_depths_at_schism_node = rs.roms_depth_point(schism_zeta, node_interp.depth_interp,
                                                       roms_data.vtransform,
                                                       roms_data.sc_r,roms_data.Cs_r, roms_data.hc)
