@@ -23,11 +23,11 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     #variables
     dst.createVariable('eta2', 'f', ('node'))
     dst['eta2'][:] = eta2_data
-    dst.createVariable('su2', 'f', ('side, nVert'))
+    dst.createVariable('su2', 'f', ('side', 'nVert'))
     dst['su2'][:,:] = su2_data
-    dst.createVariable('sv2', 'f', ('side, nVert'))
+    dst.createVariable('sv2', 'f', ('side', 'nVert'))
     dst['sv2'][:,:] = sv2_data
-    dst.createVariable('we', 'f', ('elem, nVert'))
+    dst.createVariable('we', 'f', ('elem', 'nVert'))
     dst['we'][:,:] = w_data
 
     dst.close()
