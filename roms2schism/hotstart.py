@@ -70,10 +70,6 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed(),:], axis = 0)
                                  for nodes in schism.elements])
 
-    schism_zeta = np.zeros(nnodes) # zeta is also needed to compute ROMS depths
-    schism_elt_zeta = np.zeros(nelts)
-    schism_side_zeta = np.zeros(nsides)
-
     schism_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], node_interp)
     schism_elt_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], elt_interp)
     schism_side_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], side_interp)
