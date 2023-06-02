@@ -50,31 +50,45 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     roms_data = rs.read_roms_data(fname, roms_grid, num_times = nt)
     
     node_interp = itp.spatial_interp(roms_grid,mask_OK, schism.xi, schism.yi, dcrit, lonc, latc)
+
+    elt_x = np.array([np.average(schism.xi[nodes.compressed()]) for nodes in schism.elements])
+    elt_y = np.array([np.average(schism.yi[nodes.compressed()]) for nodes in schism.elements])
+    elt_interp = itp.spatial_interp(roms_grid,mask_OK, elt_x, elt_y, dcrit, lonc, latc)
+
     side_x = 0.5 * (schism.xi[schism.sides[:,0]] + schism.xi[schism.sides[:,1]])
     side_y = 0.5 * (schism.yi[schism.sides[:,0]] + schism.yi[schism.sides[:,1]])
     side_interp = itp.spatial_interp(roms_grid,mask_OK, side_x, side_y, dcrit, lonc, latc)
-    # compute elt_x, elt_y (centroids)
-    elt_interp = itp.spatial_interp(roms_grid,mask_OK, elt_x, elt_y, dcrit, lonc, latc)
 
     Nz = len(roms_data.Cs_r)  # number of ROMS levels
     nnodes = len(schism.xi)   # number of SCHISM nodes
     nsides = len(schism.sides) # number of SCHISM sides 
-    schism_node_depth = schism.depth # schism depths at the nodes [nnodes, nvrt]
-    schism_zeta = np.zeros(nnodes) # zeta is also needed to compute ROMS depths
-    schism_temp = np.zeros((nnodes, schism.nvrt))
-    schism_salt = np.zeros((nnodes, schism.nvrt))
+    nelts = len(schism.elements) # number of SCHISM elements
 
-    schism_side_zeta = np.zeros(nsides)
+    schism_node_depth = schism.depth # schism depths at the nodes [nnodes, nvrt]
     schism_side_depth = 0.5 * (schism_node_depth[schism.sides[:,0]] + \
                                schism_node_depth[schism.sides[:,1]])
+    schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed()])
+                                 for nodes in schism.elements])
+
+    schism_zeta = np.zeros(nnodes) # zeta is also needed to compute ROMS depths
+    schism_elt_zeta = np.zeros(nelts)
+    schism_side_zeta = np.zeros(nsides)
+
+    schism_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], node_interp)
+    schism_elt_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], elt_interp)
+    schism_side_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], side_interp)
+
+    schism_temp = np.zeros((nnodes, schism.nvrt))
+    schism_salt = np.zeros((nnodes, schism.nvrt))
     schism_su2 = np.zeros((nsides, schism.nvrt))
     schism_sv2 = np.zeros((nsides, schism.nvrt))
 
-    schism_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], node_interp)
     roms_depths_at_schism_node = rs.roms_depth_point(schism_zeta, node_interp.depth_interp,
                                                       roms_data.vtransform,
                                                       roms_data.sc_r,roms_data.Cs_r, roms_data.hc)
-    schism_side_zeta = itp.interp2D(roms_data.zeta[0, mask_OK], side_interp)
+    roms_w_depths_at_schism_elt = rs.roms_depth_point(schism_elt_zeta, elt_interp.depth_interp,
+                                                      roms_data.vtransform,
+                                                      roms_data.sc_w,roms_data.Cs_w, roms_data.hc)
     roms_depths_at_schism_side = rs.roms_depth_point(schism_side_zeta,
                                                       side_interp.depth_interp,
                                                       roms_data.vtransform,
@@ -104,9 +118,13 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
         val[k,:] = itp.interp2D(roms_data.v[0,k,][mask_OK], side_interp)
     schism_sv2 = itp.vert_interp(val, roms_depths_at_schism_side, -schism_side_depth)
 
-    # TODO ...
+    print('Interpolate w:')
+    val = np.zeros((Nz, nelts))
+    for k in progressbar(range(0, Nz)):
+        val[k,:] = itp.interp2D(roms_data.w[0,k,][mask_OK], elt_interp)
+    schism_w = itp.vert_interp(val, roms_w_depths_at_schism_elt, -schism_elt_depth)
 
     outfile = 'hotstart.nc'
     save_hotstart_nc(outfile, schism_zeta, schism_temp, schism_salt,
-                     schism_su2, schism_sv2,
+                     schism_su2, schism_sv2, schism_w,
                      schism)
