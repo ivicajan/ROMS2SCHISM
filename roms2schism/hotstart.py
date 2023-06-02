@@ -59,7 +59,8 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     side_y = 0.5 * (schism.yi[schism.sides[:,0]] + schism.yi[schism.sides[:,1]])
     side_interp = itp.spatial_interp(roms_grid,mask_OK, side_x, side_y, dcrit, lonc, latc)
 
-    Nz = len(roms_data.Cs_r)  # number of ROMS levels
+    Nz = len(roms_data.Cs_r)  # number of ROMS rho levels
+    Nw = len(roms_data.Cs_w)  # number of ROMS w levels
     nnodes = len(schism.xi)   # number of SCHISM nodes
     nsides = len(schism.sides) # number of SCHISM sides 
     nelts = len(schism.elements) # number of SCHISM elements
@@ -110,8 +111,8 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     schism_sv2 = itp.vert_interp(val, roms_depths_at_schism_side, -schism_side_depth)
 
     print('Interpolate w:')
-    val = np.zeros((Nz, nelts))
-    for k in progressbar(range(0, Nz)):
+    val = np.zeros((Nw, nelts))
+    for k in progressbar(range(0, Nw)):
         val[k,:] = itp.interp2D(roms_data.w[0,k,][mask_OK], elt_interp)
     schism_w = itp.vert_interp(val, roms_w_depths_at_schism_elt, -schism_elt_depth)
 
