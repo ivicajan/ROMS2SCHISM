@@ -71,6 +71,7 @@ def schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir = './',
     schism.xi = x
     schism.yi = y
     schism.triangles = hgrid.triangles
+    schism.elements = hgrid.elements.array
     schism.sides = hgrid.elements.sides
     schism.depth = zcor
     schism.bbox = schism_bbox(hgrid.coords[:,0], hgrid.coords[:,1])
