@@ -82,8 +82,12 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     tr_nd0.long_name = "initial tracer concentration at nodes"
 
     tr_el = dst.createVariable('tr_el', 'f8', ('elem', 'nVert', 'ntracers'))
-    dst['tr_el'][:,:,:] = np.array([np.average(dst['tr_nd'][nodes.compressed(),:,:], axis = 0)
+    temp_el = np.array([np.average(temp_data[nodes.compressed(),:], axis = 0)
                                     for nodes in schism.elements])
+    salt_el = np.array([np.average(salt_data[nodes.compressed(),:], axis = 0)
+                                    for nodes in schism.elements])
+    dst['tr_el'][:,:,0] = temp_el
+    dst['tr_el'][:,:,1] = salt_el
     tr_nd.long_name = "tracer concentration at elements"
 
     # other variables (turbulence, viscosity etc.) set to zero:
