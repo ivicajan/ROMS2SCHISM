@@ -16,7 +16,8 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
     # dimensions:
     dst.createDimension('one', 1)
-    dst.createDimension('node', len(eta2_data))
+    nnodes = len(eta2_data)
+    dst.createDimension('node', nnodes)
     dst.createDimension('elem', w_data.shape[0])
     dst.createDimension('side', su2_data.shape[0])
     dst.createDimension('nVert', su2_data.shape[1])
@@ -37,19 +38,20 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     # dry nodes, sides, elements:
 
     idry = dst.createVariable('idry', 'i4', ('node'))
-    dst['idry'][:] = 0
-    dst['idry'][np.where(eta2_data < -schism.depth[:,0] + h0)] = 1
+    dry_node = np.zeros(nnodes)
+    dry_node[np.where(eta2_data < -schism.depth[:,0] + h0)] = 1
+    dst['idry'][:] = dry_node
     idry.long_name = "wet/dry flag at nodes"
 
     idry_s = dst.createVariable('idry_s', 'i4', ('side'))
     dst['idry_s'][:] = 0
-    dst['idry_s'][np.where(np.any(dst['idry'][s] for s in schism.sides))] = 1
+    dst['idry_s'][np.where([np.any(dry_node[s]) for s in schism.sides])] = 1
     idry_s.long_name = "wet/dry flag at sides"
 
     idry_e = dst.createVariable('idry_e', 'i4', ('elem'))
     dst['idry_e'][:] = 0
-    dst['idry_e'][np.where(np.any(dst['idry'][nodes.compressed()]
-                                  for nodes in schism.elements))] = 1
+    dst['idry_e'][np.where([np.any(dry_node[nodes.compressed()])
+                                  for nodes in schism.elements])] = 1
     idry_e.long_name = "wet/dry flag at elements"
 
     # elevations and velocities:
