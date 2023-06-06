@@ -203,6 +203,7 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
         val[k,:] = itp.interp2D(roms_data.w[0,k,][mask_OK], elt_interp)
     schism_w = itp.vert_interp(val, roms_w_depths_at_schism_elt, -schism_elt_depth)
 
+    print('Writing hotstart.nc...')
     outfile = 'hotstart.nc'
     save_hotstart_nc(outfile, schism_zeta, schism_temp, schism_salt,
                      schism_su2, schism_sv2, schism_w,
