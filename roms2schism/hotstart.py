@@ -10,39 +10,115 @@ from progressbar import progressbar
 
 def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
                      su2_data, sv2_data, w_data,
-                     schism):
+                     schism, h0):
 
     dst = Dataset(outfile, "w", format="NETCDF4")
 
-    #dimensions
+    # dimensions:
+    dst.createDimension('one', 1)
     dst.createDimension('node', len(eta2_data))
     dst.createDimension('elem', w_data.shape[0])
     dst.createDimension('side', su2_data.shape[0])
     dst.createDimension('nVert', su2_data.shape[1])
+    dst.createDimension('ntracers', 2)
 
-    #variables
-    eta2 = dst.createVariable('eta2', 'f', ('node'))
+    time = dst.createVariable('time', 'f8', ('one'))
+    dst['time'] = 0
+    time.long_name = 'time'
+
+    ths = dst.createVariable('iths', 'i4', ('one'))
+    dst['iths'] = 0
+    ths.long_name = 'iteration number'
+
+    ifile = dst.createVariable('ifile', 'i4', ('one'))
+    dst['ifile'] = 0
+    ifile.long_name = 'file number'
+
+    # dry nodes, sides, elements:
+
+    idry = dst.createVariable('idry', 'i4', ('node'))
+    dst['idry'][:] = 0
+    dst['idry'][np.where(eta2_data < -schism.depth[:,0] + h0)] = 1
+    idry.long_name = "wet/dry flag at nodes"
+
+    idry_s = dst.createVariable('idry_s', 'i4', ('side'))
+    dst['idry_s'][:] = 0
+    dst['idry_s'][np.where(np.any(dst['idry'][s] for s in schism.sides))] = 1
+    idry_s.long_name = "wet/dry flag at sides"
+
+    idry_e = dst.createVariable('idry_e', 'i4', ('elem'))
+    dst['idry_e'][:] = 0
+    dst['idry_e'][np.where(np.any(dst['idry'][nodes.compressed()]
+                                  for nodes in schism.elements))] = 1
+    idry_e.long_name = "wet/dry flag at elements"
+
+    # elevations and velocities:
+
+    eta2 = dst.createVariable('eta2', 'f8', ('node'))
     dst['eta2'][:] = eta2_data
     eta2.long_name = "elevation at nodes at current timestep"
 
-    su2 = dst.createVariable('su2', 'f', ('side', 'nVert'))
+    su2 = dst.createVariable('su2', 'f8', ('side', 'nVert'))
     dst['su2'][:,:] = su2_data
     su2.long_name = "u-velocity at side centres"
 
-    sv2 = dst.createVariable('sv2', 'f', ('side', 'nVert'))
+    sv2 = dst.createVariable('sv2', 'f8', ('side', 'nVert'))
     dst['sv2'][:,:] = sv2_data
     sv2.long_name = "v-velocity at side centres"
 
-    we = dst.createVariable('we', 'f', ('elem', 'nVert'))
+    we = dst.createVariable('we', 'f8', ('elem', 'nVert'))
     dst['we'][:,:] = w_data
     we.long_name = "vertical velocity at element centres"
+
+    # tracers:
+
+    tr_nd = dst.createVariable('tr_nd', 'f8', ('node', 'nVert', 'ntracers'))
+    dst['tr_nd'][:,:,0] = temp_data
+    dst['tr_nd'][:,:,1] = salt_data
+    tr_nd.long_name = "tracer concentration at nodes"
+
+    tr_nd0 = dst.createVariable('tr_nd0', 'f8', ('node', 'nVert', 'ntracers'))
+    dst['tr_nd0'][:,:,:] = dst['tr_nd'][:,:,:]
+    tr_nd0.long_name = "initial tracer concentration at nodes"
+
+    tr_el = dst.createVariable('tr_el', 'f8', ('elem', 'nVert', 'ntracers'))
+    dst['tr_el'][:,:,:] = np.array([np.average(dst['tr_nd'][nodes.compressed(),:,:], axis = 0)
+                                    for nodes in schism.elements])
+    tr_nd.long_name = "tracer concentration at elements"
+
+    # other variables (turbulence, viscosity etc.) set to zero:
+
+    q2 = dst.createVariable('q2', 'f8', ('node', 'nVert'))
+    dst['q2'][:,:] = 0
+    q2.long_name = "turbulent kinetic energy at sides and half levels"
+
+    xl = dst.createVariable('xl', 'f8', ('node', 'nVert'))
+    dst['xl'][:,:] = 0
+    xl.long_name = "turbulent mixing length at sides and half levels"
+
+    dfv = dst.createVariable('dfv', 'f8', ('node', 'nVert'))
+    dst['dfv'][:,:] = 0
+    dfv.long_name = "viscosity at nodes"
+
+    dfh = dst.createVariable('dfh', 'f8', ('node', 'nVert'))
+    dst['dfh'][:,:] = 0
+    dfh.long_name = "diffusivity at nodes"
+
+    dfq1 = dst.createVariable('dfq1', 'f8', ('node', 'nVert'))
+    dst['dfq1'][:,:] = 0
+    dfq1.long_name = "diffmin"
+
+    dfq2 = dst.createVariable('dfq2', 'f8', ('node', 'nVert'))
+    dst['dfq2'][:,:] = 0
+    dfq2.long_name = "diffmax"
 
     dst.close()
 
 def make_hotstart(schism, roms_data_filename, dcrit = 700,
                   roms_dir = './', roms_grid_filename = None,
-                  lonc = 175., latc = -37.):
-    """Creates hotstart.nc from initial results in ROMS output file"""
+                  lonc = 175., latc = -37., h0 = 0.01):
+    """Creates hotstart.nc from initial results in ROMS output file.
+    h0 is the minimum depth for wet nodes."""
 
     if roms_grid_filename is not None:
         fname = roms_grid_filename
@@ -126,4 +202,4 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     outfile = 'hotstart.nc'
     save_hotstart_nc(outfile, schism_zeta, schism_temp, schism_salt,
                      schism_su2, schism_sv2, schism_w,
-                     schism)
+                     schism, h0)
