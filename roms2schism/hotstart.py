@@ -23,15 +23,15 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     dst.createDimension('ntracers', 2)
 
     time = dst.createVariable('time', 'f8', ('one'))
-    dst['time'] = 0
+    dst['time'][:] = 0
     time.long_name = 'time'
 
     ths = dst.createVariable('iths', 'i4', ('one'))
-    dst['iths'] = 0
+    dst['iths'][:] = 0
     ths.long_name = 'iteration number'
 
     ifile = dst.createVariable('ifile', 'i4', ('one'))
-    dst['ifile'] = 0
+    dst['ifile'][:] = 0
     ifile.long_name = 'file number'
 
     # dry nodes, sides, elements:
