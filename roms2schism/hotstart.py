@@ -39,6 +39,10 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     dst['nsteps_from_cold'][:] = 0
     nfc.long_name = 'number of steps from cold start'
 
+    cse = dst.createVariable('cumsum_eta', 'f8', ('one_new'))
+    dst['cumsum_eta'][:] = 0
+    cse.long_name = 'cumsum eta'
+
     # dry nodes, sides, elements:
 
     idry = dst.createVariable('idry', 'i4', ('node'))
