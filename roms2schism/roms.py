@@ -112,7 +112,7 @@ def read_roms_files(roms_dir, roms_grid, template, dates, get_w = False):
     for date in dates:
         fname = os.path.join(roms_dir, date.strftime(template))
         try: 
-            new = read_roms_data(fname, roms_grid, get_w)
+            new = read_roms_data(fname, roms_grid, num_times = None, get_w = get_w)
             if date == dates[0]:
                 roms_data = new
             else:
