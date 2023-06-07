@@ -32,7 +32,7 @@ r2s.nudging.make_nudging(schism, template, dates, dcrit, roms_dir,
                          roms_grid_filename, lonc, latc)
 
 # create hotstart.nc file:
-roms_data_filename = "foo_his_201701.nc"
+roms_data_filename = "foo_his_20170101.nc"
 r2s.hotstart.make_hotstart(schism, roms_data_filename, dcrit, roms_dir,
                            roms_grid_filename, lonc, latc)
 
