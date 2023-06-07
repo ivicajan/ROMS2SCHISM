@@ -15,7 +15,7 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     dst = Dataset(outfile, "w", format="NETCDF4")
 
     # dimensions:
-    dst.createDimension('one', 1)
+    dst.createDimension('one_new', 1)
     nnodes = len(eta2_data)
     dst.createDimension('node', nnodes)
     dst.createDimension('elem', w_data.shape[0])
@@ -23,15 +23,15 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     dst.createDimension('nVert', su2_data.shape[1])
     dst.createDimension('ntracers', 2)
 
-    time = dst.createVariable('time', 'f8', ('one'))
+    time = dst.createVariable('time', 'f8', ('one_new'))
     dst['time'][:] = 0
     time.long_name = 'time'
 
-    ths = dst.createVariable('iths', 'i4', ('one'))
+    ths = dst.createVariable('iths', 'i4', ('one_new'))
     dst['iths'][:] = 0
     ths.long_name = 'iteration number'
 
-    ifile = dst.createVariable('ifile', 'i4', ('one'))
+    ifile = dst.createVariable('ifile', 'i4', ('one_new'))
     dst['ifile'][:] = 0
     ifile.long_name = 'file number'
 
