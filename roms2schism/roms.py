@@ -5,6 +5,7 @@ import os
 import numpy as np
 from munch import Munch as Bunch
 from netCDF4 import Dataset, num2date
+from roms2schism import geometry as geom
 
 def roms_depth_point(zeta, h, vtransform, sc_r, Cs_r, hc):
     N = len(sc_r)
@@ -73,7 +74,7 @@ def read_roms_data(filein, grid, num_times = None, get_w = False):
         v = nc.variables['v'][:nt,:,j0:(j1-1), (i0+1):(i1-1)]
         ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
         vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
-        roms.u, roms.v = rot2d(ur, vr, grid.angle)
+        roms.u, roms.v = geom.rot2d(ur, vr, grid.angle)
     else:
         roms.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
         roms.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
