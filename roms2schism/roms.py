@@ -125,7 +125,7 @@ class roms_data(object):
             for k in r:
                 z0 = (sc[k] - Cs[k]) * self.hc + Cs[k] * h
                 z[k,:] = z0 + zeta * (1.0 + z0 / h)
-        elif vtransform == 2:
+        elif self.vtransform == 2:
             for k in r:
                 z0 = (self.hc * sc[k] + Cs[k] * h) / (self.hc + h)
                 z[k,:] = zeta + (zeta + h) * z0
