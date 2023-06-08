@@ -120,7 +120,7 @@ class roms_data(object):
         N = len(self.sc_r)
         r = range(N)
         z = np.zeros(np.hstack((N, zeta.shape)))
-        sc, Cs = self.sc_w, self.Cs_w if w else self.sc_r, self.Cs_r
+        sc, Cs = (self.sc_w, self.Cs_w) if w else (self.sc_r, self.Cs_r)
         if self.vtransform == 1:
             for k in r:
                 z0 = (sc[k] - Cs[k]) * self.hc + Cs[k] * h
