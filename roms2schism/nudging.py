@@ -53,7 +53,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
         fname = roms_grid_filename
     else:
         fname = os.path.join(roms_dir, dates[0].strftime(template))
-    roms_grid = rs.read_roms_grid(fname, sponge_bbox)
+    roms_grid = rs.roms_grid(fname, sponge_bbox)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
     roms_data = rs.read_roms_files(roms_dir, roms_grid, template, dates)

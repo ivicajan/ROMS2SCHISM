@@ -138,7 +138,7 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
         fname = roms_grid_filename
     else:
         fname = os.path.join(roms_dir, roms_data_filename)
-    roms_grid = rs.read_roms_grid(fname, schism.bbox)
+    roms_grid = rs.roms_grid(fname, schism.bbox)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
     nt = 1                          # number of times

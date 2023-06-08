@@ -21,42 +21,45 @@ def roms_depth_point(zeta, h, vtransform, sc_r, Cs_r, hc):
             z[k,:] = zeta + (zeta + h) * z0
     return z
 
-def roms_bbox(lon, lat, bbox):
-    from matplotlib import path
-    #bbox = np.array([xmin, xmax, ymin, ymax])
-    mypath = np.array([bbox[[0,1,1,0]], bbox[[2,2,3,3]]]).T
-    p = path.Path(mypath)
-    points = np.vstack((lon.flatten(), lat.flatten())).T   
-    n, m = np.shape(lon)
-    inside = p.contains_points(points).reshape((n, m))
-    ii, jj = np.meshgrid(list(range(m)), list(range(n)))
-    i0, i1, j0, j1 = min(ii[inside])-1, max(ii[inside]), min(jj[inside])-1, max(jj[inside])+3
-    ny, nx = np.shape(lon)
-    if i0<0 : i0=0
-    if i1>nx-1 : i0 = nx
-    if j0<0 : j0=0
-    if j1>ny-1 : j1 = ny
-    return i0, i1, j0, j1     
+class roms_grid(object):
+    """Class for ROMS grid"""
     
-def read_roms_grid(filein, bbox):
-    """Reads ROMS grid data from ROMS grid file or output."""
-    roms = Bunch()
-    nc = Dataset(filein,'r')
-    lonr = nc.variables['lon_rho'][:]
-    latr = nc.variables['lat_rho'][:]
-    roms.i0, roms.i1, roms.j0, roms.j1 = roms_bbox(lonr, latr, bbox)
-    print('bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(roms.i0,roms.i1,roms.j0,roms.j1))
-    roms.h = nc.variables['h'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
-    # if east/north velocities not present, need to rotate and process from staggered velocities:
-    roms.rotate = not all([var in nc.variables for var in ['u_eastward', 'v_northward']])
-    if roms.rotate:
-        roms.angle = nc.variables['angle'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
-    roms.lonr = lonr[(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
-    roms.latr = latr[(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
-    roms.maskr = nc.variables['mask_rho'][(roms.j0+1):(roms.j1-1), (roms.i0+1):(roms.i1-1)]
-    nc.close()
-    print('Done with reading roms grid')
-    return roms
+    def __init__(self, filein, bbox):
+        """Reads ROMS grid data from ROMS grid file or output."""
+
+        nc = Dataset(filein,'r')
+        lonr = nc.variables['lon_rho'][:]
+        latr = nc.variables['lat_rho'][:]
+        self.get_bbox_indices(lonr, latr, bbox)
+        print('bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(self.i0,self.i1,self.j0,self.j1))
+        self.h = nc.variables['h'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        # if east/north velocities not present, need to rotate and process from staggered velocities:
+        self.rotate = not all([var in nc.variables for var in ['u_eastward', 'v_northward']])
+        if self.rotate:
+            self.angle = nc.variables['angle'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        self.lonr = lonr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        self.latr = latr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        self.maskr = nc.variables['mask_rho'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        nc.close()
+        print('Done with reading roms grid')
+
+    def get_bbox_indices(self, lon, lat, bbox):
+        """Gets i,j indices corresponding to specified bounding box"""
+
+        from matplotlib import path
+        mypath = np.array([bbox[[0,1,1,0]], bbox[[2,2,3,3]]]).T
+        p = path.Path(mypath)
+        points = np.vstack((lon.flatten(), lat.flatten())).T
+        n, m = np.shape(lon)
+        inside = p.contains_points(points).reshape((n, m))
+        ii, jj = np.meshgrid(list(range(m)), list(range(n)))
+        self.i0, self.i1, self.j0, self.j1 = min(ii[inside])-1, max(ii[inside]), \
+                                             min(jj[inside])-1, max(jj[inside])+3
+        ny, nx = np.shape(lon)
+        if self.i0 < 0: self.i0 = 0
+        if self.i1 > nx-1: self.i0 = nx
+        if self.j0 < 0: self.j0 = 0
+        if self.j1 > ny-1: self.j1 = ny
 
 def read_roms_data(filein, grid, num_times = None, get_w = False):
     roms = Bunch()

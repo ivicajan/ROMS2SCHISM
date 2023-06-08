@@ -46,7 +46,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
         fname = roms_grid_filename
     else:
         fname = os.path.join(roms_dir, dates[0].strftime(template))
-    roms_grid = rs.read_roms_grid(fname, schism.b_bbox)
+    roms_grid = rs.roms_grid(fname, schism.b_bbox)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
