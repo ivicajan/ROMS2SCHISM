@@ -114,7 +114,7 @@ class roms_data(object):
         self.temp = np.append(self.temp, new.temp, axis=0)
         self.salt = np.append(self.salt, new.salt, axis=0)
 
-    def depth_point(zeta, h, w = False):
+    def depth_point(self, zeta, h, w = False):
         """Depths for given zeta and h. If w is True, return w levels rather
         than rho."""
         N = len(self.sc_r)
