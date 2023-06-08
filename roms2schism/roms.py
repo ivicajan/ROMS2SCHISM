@@ -117,10 +117,10 @@ class roms_data(object):
     def depth_point(self, zeta, h, w = False):
         """Depths for given zeta and h. If w is True, return w levels rather
         than rho."""
-        N = len(self.sc_r)
+        sc, Cs = (self.sc_w, self.Cs_w) if w else (self.sc_r, self.Cs_r)
+        N = len(sc)
         r = range(N)
         z = np.zeros(np.hstack((N, zeta.shape)))
-        sc, Cs = (self.sc_w, self.Cs_w) if w else (self.sc_r, self.Cs_r)
         if self.vtransform == 1:
             for k in r:
                 z0 = (sc[k] - Cs[k]) * self.hc + Cs[k] * h
