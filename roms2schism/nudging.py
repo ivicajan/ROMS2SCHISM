@@ -57,7 +57,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
 
     roms_data = rs.read_roms_files(roms_dir, roms_grid, template, dates)
       
-    interp = itp.spatial_interp(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
+    interp = itp.interpolator(roms_grid, mask_OK, sponge_x, sponge_y, dcrit, lonc, latc)
 
     # initi outputs nudgining
     nt = len(roms_data.date)  # need to loop over time for each record
@@ -70,7 +70,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
     print('Total steps: %d' %nt, end='>')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
-        schism_zeta[it,:,0,0] = itp.interp2D(roms_data.zeta[it, mask_OK], interp)
+        schism_zeta[it,:,0,0] = interp.interpolate(roms_data.zeta[it, mask_OK])
         # compute depths for each ROMS levels at the specific SCHISM locations
         roms_depths_at_schism_node = rs.roms_depth_point(schism_zeta[it,:,0,0], interp.depth_interp,
                                                          roms_data.vtransform, roms_data.sc_r,
@@ -78,13 +78,13 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
         # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
         temp_interp = np.zeros((Nz, Np))   # this is temp at ROMS levels
         for k in range(0, Nz):   
-            temp_interp[k,:] = itp.interp2D(roms_data.temp[it,k,][mask_OK], interp)
+            temp_interp[k,:] = interp.interpolate(roms_data.temp[it,k,][mask_OK])
         # interpolate in vertical to SCHISM depths
         schism_temp[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -sponge_depth)
         # interp salt variable 
         temp_interp = np.zeros((Nz, Np))
         for k in range(0,Nz):
-            temp_interp[k,:] = itp.interp2D(roms_data.salt[it,k,][mask_OK], interp)
+            temp_interp[k,:] = interp.interpolate(roms_data.salt[it,k,][mask_OK])
         # now you need to interp temp for each NOP at SCHISM depths
         schism_salt[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -sponge_depth)
 
