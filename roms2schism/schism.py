@@ -40,6 +40,7 @@ class schism_grid(object):
     def __init__(self, schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
                  schism_grid_dir = './', lonc = 175., latc = -37.):
 
+        print('Reading SCHISM grid %s, %s...' % (schism_grid_file, schism_vgrid_file))
         # get schism mesh
         schism_mesh = os.path.join(schism_grid_dir, schism_grid_file)
         hgrid = Hgrid.open(schism_mesh,  crs='EPSG:4326')

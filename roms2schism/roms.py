@@ -12,6 +12,7 @@ class roms_grid(object):
     def __init__(self, filename, bbox):
         """Reads ROMS grid data from ROMS grid file or output."""
 
+        print('Reading roms grid %s...' % filename)
         nc = Dataset(filename,'r')
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
@@ -26,7 +27,6 @@ class roms_grid(object):
         self.latr = latr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
         self.maskr = nc.variables['mask_rho'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
         nc.close()
-        print('Done with reading roms grid')
 
     def get_bbox_indices(self, lon, lat, bbox):
         """Gets i,j indices corresponding to specified bounding box"""
@@ -70,15 +70,14 @@ class roms_data(object):
     def read(self, grid, roms_dir, filename, num_times = None, get_w = False):
         """Reads ROMS data from single file"""
 
+        print('Reading roms data file %s...' % filename)
         fname = os.path.join(roms_dir, filename)
         nc = Dataset(fname,'r')
         times = nc.variables['ocean_time']
         nt = np.size(times) if num_times is None else num_times
         self.date = num2date(times[:nt], units=times.units, calendar='proleptic_gregorian')
         i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
-        #print('loading subset i0=%d, i1=%d, j0=%d, j1=%d' %(i0,i1,j0,j1))
         self.zeta = nc.variables['zeta'][:nt,(j0+1):(j1-1), (i0+1):(i1-1)]
-        #print(np.shape(self.zeta))
         if grid.rotate:
             # rotate and de-stagger velocities:
             u = nc.variables['u'][:nt,:,(j0+1):(j1-1), i0:(i1-1)]
@@ -100,7 +99,6 @@ class roms_data(object):
         self.Cs_w = nc.variables['Cs_w'][:]
         self.hc = nc.variables['hc'][:]
         nc.close()
-        print('Done reading roms data file: %s' %filename)
 
     def append(self, new, get_w = False):
         '''
