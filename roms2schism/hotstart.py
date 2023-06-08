@@ -172,16 +172,10 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     schism_elt_zeta = elt_interp.interpolate(roms_data.zeta[0, mask_OK])
     schism_side_zeta = side_interp.interpolate(roms_data.zeta[0, mask_OK])
 
-    roms_depths_at_schism_node = rs.roms_depth_point(schism_zeta, node_interp.depth_interp,
-                                                      roms_data.vtransform,
-                                                      roms_data.sc_r,roms_data.Cs_r, roms_data.hc)
-    roms_w_depths_at_schism_elt = rs.roms_depth_point(schism_elt_zeta, elt_interp.depth_interp,
-                                                      roms_data.vtransform,
-                                                      roms_data.sc_w,roms_data.Cs_w, roms_data.hc)
-    roms_depths_at_schism_side = rs.roms_depth_point(schism_side_zeta,
-                                                      side_interp.depth_interp,
-                                                      roms_data.vtransform,
-                                                      roms_data.sc_r,roms_data.Cs_r, roms_data.hc)
+    roms_depths_at_schism_node = roms_data.depth_point(schism_zeta, node_interp.depth_interp)
+    roms_w_depths_at_schism_elt = roms_data.depth_point(schism_elt_zeta, elt_interp.depth_interp,
+                                                        w = True)
+    roms_depths_at_schism_side = roms_data.depth_point(schism_side_zeta, side_interp.depth_interp)
 
     print('Interpolate temps:')
     val = np.zeros((Nz, nnodes))

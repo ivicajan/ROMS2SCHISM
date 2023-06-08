@@ -6,27 +6,13 @@ import numpy as np
 from netCDF4 import Dataset, num2date
 from roms2schism import geometry as geom
 
-def roms_depth_point(zeta, h, vtransform, sc_r, Cs_r, hc):
-    N = len(sc_r)
-    r = range(N)
-    z = np.zeros(np.hstack((N, zeta.shape)))
-    if vtransform == 1:
-        for k in r:
-            z0 = (sc_r[k] - Cs_r[k]) * hc + Cs_r[k] * h
-            z[k,:] = z0 + zeta * (1.0 + z0/h)
-    elif vtransform == 2:
-        for k in r:
-            z0 = (hc * sc_r[k] + Cs_r[k] * h) / (hc + h)
-            z[k,:] = zeta + (zeta + h) * z0
-    return z
-
 class roms_grid(object):
     """Class for ROMS grid"""
     
-    def __init__(self, filein, bbox):
+    def __init__(self, filename, bbox):
         """Reads ROMS grid data from ROMS grid file or output."""
 
-        nc = Dataset(filein,'r')
+        nc = Dataset(filename,'r')
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
         self.get_bbox_indices(lonr, latr, bbox)
@@ -127,3 +113,21 @@ class roms_data(object):
         if get_w: np.append(self.w, new.w, axis=0)
         self.temp = np.append(self.temp, new.temp, axis=0)
         self.salt = np.append(self.salt, new.salt, axis=0)
+
+    def depth_point(zeta, h, w = False):
+        """Depths for given zeta and h. If w is True, return w levels rather
+        than rho."""
+        N = len(self.sc_r)
+        r = range(N)
+        z = np.zeros(np.hstack((N, zeta.shape)))
+        sc, Cs = self.sc_w, self.Cs_w if w else self.sc_r, self.Cs_r
+        if self.vtransform == 1:
+            for k in r:
+                z0 = (sc[k] - Cs[k]) * self.hc + Cs[k] * h
+                z[k,:] = z0 + zeta * (1.0 + z0 / h)
+        elif vtransform == 2:
+            for k in r:
+                z0 = (self.hc * sc[k] + Cs[k] * h) / (self.hc + h)
+                z[k,:] = zeta + (zeta + h) * z0
+        return z
+
