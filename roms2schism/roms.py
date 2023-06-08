@@ -3,7 +3,6 @@
 
 import os
 import numpy as np
-from munch import Munch as Bunch
 from netCDF4 import Dataset, num2date
 from roms2schism import geometry as geom
 
@@ -61,68 +60,70 @@ class roms_grid(object):
         if self.j0 < 0: self.j0 = 0
         if self.j1 > ny-1: self.j1 = ny
 
-def read_roms_data(filein, grid, num_times = None, get_w = False):
-    roms = Bunch()
-    nc = Dataset(filein,'r')
-    times = nc.variables['ocean_time']
-    nt = np.size(times) if num_times is None else num_times
-    roms.date = num2date(times[:nt], units=times.units, calendar='proleptic_gregorian')
-    i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
-    #print('loading subset i0=%d, i1=%d, j0=%d, j1=%d' %(i0,i1,j0,j1))
-    roms.zeta = nc.variables['zeta'][:nt,(j0+1):(j1-1), (i0+1):(i1-1)]
-    #print(np.shape(roms.zeta))
-    if grid.rotate:
-        # rotate and de-stagger velocities:
-        u = nc.variables['u'][:nt,:,(j0+1):(j1-1), i0:(i1-1)]
-        v = nc.variables['v'][:nt,:,j0:(j1-1), (i0+1):(i1-1)]
-        ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
-        vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
-        roms.u, roms.v = geom.rot2d(ur, vr, grid.angle)
-    else:
-        roms.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-        roms.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    if get_w:
-        roms.w = nc.variables['w'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    roms.temp = nc.variables['temp'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    roms.salt = nc.variables['salt'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-    roms.vtransform = nc.variables['Vtransform'][:]
-    roms.sc_r = nc.variables['s_rho'][:]
-    roms.Cs_r = nc.variables['Cs_r'][:]
-    roms.sc_w = nc.variables['s_w'][:]
-    roms.Cs_w = nc.variables['Cs_w'][:]
-    roms.hc = nc.variables['hc'][:]
-    nc.close()
-    #print(np.shape(roms.temp))
-    print('Done reading roms data file: %s' %filein)
-    return roms
+class roms_data(object):
+    """Class for ROMS output data"""
 
-def roms_append(old, new, get_w = False):
-    ''' 
-    appends variables from new dictionary into old along axis 0 (time)
-    '''
-    out = old
-    out.date = np.append(old.date, new.date, axis=0)
-    out.zeta = np.append(old.zeta, new.zeta, axis=0)
-    out.u = np.append(old.u, new.u, axis=0)
-    out.v = np.append(old.v, new.v, axis=0)
-    if get_w: np.append(old.w, new.w, axis=0)
-    out.temp = np.append(old.temp, new.temp, axis=0)
-    out.salt = np.append(old.salt, new.salt, axis=0)
-    return out
+    def __init__(self, grid, roms_dir, filename, dates = None, num_times = None,
+                 get_w = False):
 
-def read_roms_files(roms_dir, roms_grid, template, dates, get_w = False):
-    # part for loading ROMS data for the subset
-    for date in dates:
-        fname = os.path.join(roms_dir, date.strftime(template))
-        try: 
-            new = read_roms_data(fname, roms_grid, num_times = None, get_w = get_w)
-            if date == dates[0]:
-                roms_data = new
-            else:
-                roms_data = roms_append(roms_data, new)
-        except:
-            continue        
+        if dates is None: # read single file
+            self.read(grid, roms_dir, filename, num_times, get_w)
+        else:
+            fname = dates[0].strftime(filename) # filename interpreted as a template
+            self.read(grid, roms_dir, fname, num_times = None, get_w = get_w)
+            if len(dates) > 1:
+                for date in dates[1:]:
+                    try:
+                        fname = date.strftime(filename)
+                        new = roms_data(grid, roms_dir, fname, num_times = None,
+                                        get_w = get_w)
+                        self.append(new)
+                    except:
+                        continue
 
-    print('Done with reading roms files')
-    return roms_data
+    def read(self, grid, roms_dir, filename, num_times = None, get_w = False):
+        """Reads ROMS data from single file"""
 
+        fname = os.path.join(roms_dir, filename)
+        nc = Dataset(fname,'r')
+        times = nc.variables['ocean_time']
+        nt = np.size(times) if num_times is None else num_times
+        self.date = num2date(times[:nt], units=times.units, calendar='proleptic_gregorian')
+        i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
+        #print('loading subset i0=%d, i1=%d, j0=%d, j1=%d' %(i0,i1,j0,j1))
+        self.zeta = nc.variables['zeta'][:nt,(j0+1):(j1-1), (i0+1):(i1-1)]
+        #print(np.shape(self.zeta))
+        if grid.rotate:
+            # rotate and de-stagger velocities:
+            u = nc.variables['u'][:nt,:,(j0+1):(j1-1), i0:(i1-1)]
+            v = nc.variables['v'][:nt,:,j0:(j1-1), (i0+1):(i1-1)]
+            ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
+            vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
+            self.u, self.v = geom.rot2d(ur, vr, grid.angle)
+        else:
+            self.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+            self.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        if get_w:
+            self.w = nc.variables['w'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        self.temp = nc.variables['temp'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        self.salt = nc.variables['salt'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+        self.vtransform = nc.variables['Vtransform'][:]
+        self.sc_r = nc.variables['s_rho'][:]
+        self.Cs_r = nc.variables['Cs_r'][:]
+        self.sc_w = nc.variables['s_w'][:]
+        self.Cs_w = nc.variables['Cs_w'][:]
+        self.hc = nc.variables['hc'][:]
+        nc.close()
+        print('Done reading roms data file: %s' %filename)
+
+    def append(self, new, get_w = False):
+        '''
+        appends variables from new along axis 0 (time)
+        '''
+        self.date = np.append(self.date, new.date, axis=0)
+        self.zeta = np.append(self.zeta, new.zeta, axis=0)
+        self.u = np.append(self.u, new.u, axis=0)
+        self.v = np.append(self.v, new.v, axis=0)
+        if get_w: np.append(self.w, new.w, axis=0)
+        self.temp = np.append(self.temp, new.temp, axis=0)
+        self.salt = np.append(self.salt, new.salt, axis=0)

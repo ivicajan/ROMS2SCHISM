@@ -144,7 +144,7 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     nt = 1                          # number of times
 
     # read initial roms data:
-    roms_data = rs.read_roms_data(fname, roms_grid, num_times = nt, get_w = True)
+    roms_data = rs.roms_data(roms_grid, roms_dir, roms_data_filename, num_times = nt, get_w = True)
     
     node_interp = itp.interpolator(roms_grid,mask_OK, schism.xi, schism.yi, dcrit, lonc, latc)
 

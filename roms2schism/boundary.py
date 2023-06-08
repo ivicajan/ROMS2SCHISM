@@ -50,7 +50,7 @@ def make_boundary(schism, template, dates, dcrit = 700,
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
-    roms_data = rs.read_roms_files(roms_dir, roms_grid, template, dates)
+    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates)
     
     interp = itp.interpolator(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
 
