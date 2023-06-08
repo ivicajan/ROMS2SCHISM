@@ -39,7 +39,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
-    sponge = sm.readgr3('nudge.gr3')
+    sponge = sm.gr3('nudge.gr3')
     OK = np.where(sponge.z != 0)
     sponge_x = sponge.x[OK]; sponge_y = sponge.y[OK]; sponge_depth = schism.depth[OK]; 
     np.shape(sponge_x), np.shape(sponge_depth)

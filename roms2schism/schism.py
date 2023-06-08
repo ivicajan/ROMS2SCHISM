@@ -2,37 +2,38 @@
 # coding: utf-8
 
 import os
+from itertools import islice
 import numpy as np
 from munch import Munch as Bunch
 from pyschism.mesh import Hgrid
 from pyschism.mesh.vgrid import Vgrid
 from roms2schism.geometry import transform_ll_to_cpp
 
-def readgr3(filename):
-    from itertools import islice;
-    out = Bunch()
-    with open(filename,'r') as fid:
-        # grid  name
-        out.name=fid.readline().strip();        
-        # number of elements and nodes
-        tmp=fid.readline().split();
-        out.ne=int(tmp[0]);
-        out.nn=int(tmp[1]);
-        # first load nodes and values 
-        # not using nn
-        tmp=list(islice(fid,out.nn));
-        node_id,out.x,out.y,out.z=np.loadtxt(tmp,
-                                             dtype={'names':('n','x','y','z'),
-                                                    'formats':('i4','f8','f8','f8')},
-                                             usecols = (0,1,2,3),
-                                             unpack=True)
-        del node_id;
-        # elements
-        tmp=list(islice(fid,out.ne));
-        tmp_e=np.loadtxt(tmp,dtype='i4');
-        out.e=tmp_e[:,2:]-1;
-        fid.close();
-        return out
+class gr3(object):
+    """Class for gr3 grid"""
+
+    def __init__(self, filename):
+
+        with open(filename,'r') as fid:
+            # grid  name
+            self.name = fid.readline().strip()
+            # number of elements and nodes
+            tmp = fid.readline().split()
+            self.ne = int(tmp[0])
+            self.nn = int(tmp[1])
+            # first load nodes and values
+            # not using nn
+            tmp = list(islice(fid, self.nn))
+            node_id, self.x, self.y, self.z = np.loadtxt(tmp,
+                                                         dtype = {'names':('n','x','y','z'),
+                                                                  'formats':('i4','f8','f8','f8')},
+                                                         usecols = (0,1,2,3),
+                                                         unpack=True)
+            del node_id
+            # elements
+            tmp = list(islice(fid, self.ne))
+            tmp_e = np.loadtxt(tmp, dtype='i4')
+            self.e = tmp_e[:,2:] - 1
 
 def schism_grid(schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
                 schism_grid_dir = './', lonc = 175., latc = -37.):
