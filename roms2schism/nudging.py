@@ -8,6 +8,7 @@ from netCDF4 import Dataset, date2num
 from roms2schism import schism as sm
 from roms2schism import roms as rs
 from roms2schism import interpolation as itp
+from roms2schism import geometry as geo
 
 def save_nudging_nc(outfile, data, date, sponge_nodes):
     '''
@@ -45,7 +46,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
     np.shape(sponge_x), np.shape(sponge_depth)
 
     # repeat all that we had for boundaries but now for "OK" points
-    sponge_bbox = sm.schism_bbox(sponge_x, sponge_y)
+    sponge_bbox = geo.bbox(sponge_x, sponge_y, offset = 0.01)
 
     # part to load ROMS grid for given subset
     if roms_grid_filename is not None:

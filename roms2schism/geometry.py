@@ -4,8 +4,6 @@
 import numpy as np
 
 def transform_ll_to_cpp(lon, lat, lonc, latc):
-    # harcoded central location for projection and degrees into meters
-    # but can compute mean lonc: lonc=(np.max(lon)+np.min(lon))/2.0
     longitude=lon/180*np.pi
     latitude=lat/180*np.pi
     radius=6378206.4
@@ -17,9 +15,6 @@ def transform_ll_to_cpp(lon, lat, lonc, latc):
 
 def rot2d(x, y, ang): #rotate vectors by geometric angle
     dims = x.shape
-    #print(np.shape(x))
-    #print(np.shape(y))
-    #print(np.shape(ang))
     if len(dims)==3:
         ang = np.tile(ang,[dims[0],1,1])
     if len(dims)==4:
@@ -28,3 +23,10 @@ def rot2d(x, y, ang): #rotate vectors by geometric angle
     yr = x*np.sin(ang) + y*np.cos(ang)
     return xr, yr
 
+def bbox(x, y, offset = 0):
+    """
+    Calculate boundary box of specified points, with optional offset
+    """
+    xmin, xmax = np.min(x)-offset, np.max(x)+offset
+    ymin, ymax = np.min(y)-offset, np.max(y)+offset
+    return np.array([xmin, xmax, ymin, ymax])

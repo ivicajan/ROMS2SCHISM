@@ -79,13 +79,4 @@ def schism_grid(schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
     print('Computing SCHISM zcor is done!')    
     return schism
     
-def schism_bbox(blon, blat):
-    """
-    Calculate boundary box of schism grid
-    """
-    # add small offeset for interpolation
-    offset = 0.01
-    xmin, xmax = np.min(blon)-offset, np.max(blon)+offset
-    ymin, ymax = np.min(blat)-offset, np.max(blat)+offset        
-    return np.array([xmin, xmax, ymin, ymax])
 
