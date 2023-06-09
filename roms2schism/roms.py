@@ -14,7 +14,7 @@ class roms_grid(object):
 
         print('Reading roms grid %s...' % filename)
         fname = os.path.join(grid_dir, filename)
-        nc = Dataset(filename,'r')
+        nc = Dataset(fname,'r')
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
         self.get_bbox_indices(lonr, latr, bbox)
