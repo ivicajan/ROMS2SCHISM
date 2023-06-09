@@ -14,25 +14,21 @@ ndays = 30
 dates = start_date + np.arange(ndays) * timedelta(days = 1)
 
 roms_dir = '/path/to/roms/data/'
-lonc, latc = 175., -37.
 dcrit = 7e3
 
 # read SCHISM grid:
-schism = r2s.schism.schism_grid(lonc = lonc, latc = latc)
+schism = r2s.schism.schism_grid()
 
 # create boundary forcing files:
 template = "foo_his_%Y%m%d.nc"
-r2s.boundary.make_boundary(schism, template, dates, dcrit, roms_dir,
-                           lonc = lonc, latc = latc)
+r2s.boundary.make_boundary(schism, template, dates, dcrit, roms_dir)
 
 # create boundary nudging files for T, S:
 template = "foo_avg_%Y%m%d.nc"
-r2s.nudging.make_nudging(schism, template, dates, dcrit, roms_dir,
-                         lonc = lonc, latc = latc)
+r2s.nudging.make_nudging(schism, template, dates, dcrit, roms_dir)
 
 # create hotstart.nc file:
 roms_data_filename = "foo_his_20170101.nc"
-r2s.hotstart.make_hotstart(schism, roms_data_filename, dcrit, roms_dir,
-                           lonc = lonc, latc = latc)
+r2s.hotstart.make_hotstart(schism, roms_data_filename, dcrit, roms_dir)
 
 ```

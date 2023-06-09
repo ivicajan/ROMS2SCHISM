@@ -11,7 +11,7 @@ from roms2schism import boundary as bdy
 from roms2schism import nudging as ndg
 
 def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
-         roms_dir = './', roms_grid_filename = None, lonc = 175., latc = -37.):
+         roms_dir = './', roms_grid_filename = None, lonc = None, latc = None):
     # ## Actual start of the roms2schism interpolation
     
     # part with reading SCHISM mesh
@@ -22,15 +22,13 @@ def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir =
     if bry is True:
         print('Making bry files for SCHISM')
         bdy.make_boundary(schism, template, dates, dcrit, roms_dir,
-                          roms_grid_filename, roms_grid_dir, lonc, latc)
+                          roms_grid_filename, roms_grid_dir)
         
     if nudge is True:
         print('Making nudging files for SCHISM')
         ndg.make_nudging(schism, template, dates, dcrit, roms_dir,
-                         roms_grid_filename, roms_grid_dir, lonc, latc)
+                         roms_grid_filename, roms_grid_dir)
         
-    return    
-
 if __name__=='__main__':
     
     from argparse import ArgumentParser    
@@ -42,8 +40,8 @@ if __name__=='__main__':
     parser.add_argument('--roms_dir', default='./', help='ROMS output directory')
     parser.add_argument('--roms_grid_filename', default=None, help='ROMS grid filename (None if no grid required)')
     parser.add_argument('--roms_grid_dir', default=None, help='ROMS grid directory (only needed if roms_grid_filename is not None)')
-    parser.add_argument('--lonc', default=175.,  type=float, help='reference longitude for converting coordinates to metres')
-    parser.add_argument('--latc', default=-37.,  type=float, help='reference latitude for converting coordinates to metres')
+    parser.add_argument('--lonc', default=None, help='reference longitude for converting coordinates to metres (None to use average of SCHISM grid)')
+    parser.add_argument('--latc', default=None, help='reference latitude for converting coordinates to metres (None to use average of SCHISM grid)')
     parser.add_argument('--bry', default=False, help='make boundary file')
     parser.add_argument('--nudge', default=False, help='make nudging file')
     parser.add_argument('--template', default='model_avg_%Y%m%d.nc', help='roms output filename template')

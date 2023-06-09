@@ -38,21 +38,27 @@ class schism_grid(object):
     """Class for SCHISM grid"""
 
     def __init__(self, schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
-                 schism_grid_dir = './', lonc = 175., latc = -37.):
+                 schism_grid_dir = './', lonc = None, latc = None):
 
+        bbox_offset = 0.01
         print('Reading SCHISM grid %s, %s...' % (schism_grid_file, schism_vgrid_file))
         # get schism mesh
-        schism_mesh = os.path.join(schism_grid_dir, schism_grid_file)
-        hgrid = Hgrid.open(schism_mesh,  crs='EPSG:4326')
+        hgrid_filename = os.path.join(schism_grid_dir, schism_grid_file)
+        hgrid = Hgrid.open(hgrid_filename,  crs = 'EPSG:4326')
         # get schism depths
-        schism_vgrid = os.path.join(schism_grid_dir, schism_vgrid_file)
-        vd = Vgrid.open(schism_vgrid)
+        vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
+        vd = Vgrid.open(vgrid_filename)
         sigma = vd.sigma              # sigma values for vertical grid
         depth = hgrid.values          # this is grid bathymery
-        zcor = depth[:,None]*sigma    # this is 2D array with layer depths at [nodes, layers]
+        zcor = depth[:,None] * sigma  # this is 2D array with layer depths at [nodes, layers]
         nvrt = zcor.shape[1]          # number of SCHISM layers
-        x, y = transform_ll_to_cpp(hgrid.coords[:,0], hgrid.coords[:,1],
-                                            lonc, latc) # transform them to meters
+
+        self.lon = hgrid.coords[:,0]
+        self.lat = hgrid.coords[:,1]
+        self.lonc = np.average(self.lon) if lonc is None else lonc # reference coords
+        self.latc = np.average(self.lat) if latc is None else latc # for conversion
+        x, y = transform_ll_to_cpp(self.lon, self.lat,
+                                   self.lonc, self.latc) # transform them to meters
 
         # get SCHISM open boundaries from grid file
         gdf = hgrid.boundaries.open.copy()
@@ -61,21 +67,17 @@ class schism_grid(object):
         blon = hgrid.coords[opbd,0]  # OB lons
         blat = hgrid.coords[opbd,1]  # OB lats
         NOP = len(blon)              # number of open boundary nodes
-        xi, yi = x[opbd], y[opbd]  # only at the bry nodes
-        self.b_bbox = bbox(blon, blat, offset = 0.01)
+        self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
+        self.b_bbox = bbox(blon, blat, offset = bbox_offset)
         self.NOP = NOP
         self.nvrt = nvrt
         self.b_lon = blon
         self.b_lat = blat
         self.b_depth = zcor2
-        self.b_xi = xi
-        self.b_yi = yi
-        self.lon = hgrid.coords[:,0]
-        self.lat = hgrid.coords[:,1]
         self.xi = x
         self.yi = y
         self.triangles = hgrid.triangles
         self.elements = hgrid.elements.array
         self.sides = hgrid.elements.sides
         self.depth = zcor
-        self.bbox = bbox(self.lon, self.lat, offset = 0.01)
+        self.bbox = bbox(self.lon, self.lat, offset = bbox_offset)

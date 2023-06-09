@@ -130,7 +130,7 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
 def make_hotstart(schism, roms_data_filename, dcrit = 700, roms_dir = './',
                   roms_grid_filename = None, roms_grid_dir = None,
-                  lonc = 175., latc = -37., h0 = 0.01):
+                  h0 = 0.01):
     """Creates hotstart.nc from initial results in ROMS output file.
     h0 is the minimum depth for wet nodes."""
 
@@ -139,7 +139,7 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700, roms_dir = './',
     else:
         roms_grid_dir = roms_dir
         fname = roms_data_filename
-    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.bbox)
+    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.bbox, schism.lonc, schism.latc)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
     nt = 1                          # number of times
@@ -147,15 +147,15 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700, roms_dir = './',
     # read initial roms data:
     roms_data = rs.roms_data(roms_grid, roms_dir, roms_data_filename, num_times = nt, get_w = True)
     
-    node_interp = itp.interpolator(roms_grid,mask_OK, schism.xi, schism.yi, dcrit, lonc, latc)
+    node_interp = itp.interpolator(roms_grid,mask_OK, schism.xi, schism.yi, dcrit)
 
     elt_x = np.array([np.average(schism.xi[nodes.compressed()]) for nodes in schism.elements])
     elt_y = np.array([np.average(schism.yi[nodes.compressed()]) for nodes in schism.elements])
-    elt_interp = itp.interpolator(roms_grid,mask_OK, elt_x, elt_y, dcrit, lonc, latc)
+    elt_interp = itp.interpolator(roms_grid,mask_OK, elt_x, elt_y, dcrit)
 
     side_x = 0.5 * (schism.xi[schism.sides[:,0]] + schism.xi[schism.sides[:,1]])
     side_y = 0.5 * (schism.yi[schism.sides[:,0]] + schism.yi[schism.sides[:,1]])
-    side_interp = itp.interpolator(roms_grid,mask_OK, side_x, side_y, dcrit, lonc, latc)
+    side_interp = itp.interpolator(roms_grid,mask_OK, side_x, side_y, dcrit)
 
     Nz = len(roms_data.Cs_r)  # number of ROMS rho levels
     Nw = len(roms_data.Cs_w)  # number of ROMS w levels

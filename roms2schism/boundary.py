@@ -37,8 +37,7 @@ def save_boundary_nc(outfile, data, date, schism):
     return
 
 def make_boundary(schism, template, dates, dcrit = 700, roms_dir = './',
-                  roms_grid_filename = None, roms_grid_dir = None,
-                  lonc = 175., latc = -37.):
+                  roms_grid_filename = None, roms_grid_dir = None):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset
@@ -47,13 +46,13 @@ def make_boundary(schism, template, dates, dcrit = 700, roms_dir = './',
     else:
         roms_grid_dir = roms_dir
         fname = dates[0].strftime(template)
-    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.b_bbox)
+    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.b_bbox, schism.lonc, schism.latc)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
     roms_data = rs.roms_data(roms_grid, roms_dir, template, dates)
     
-    interp = itp.interpolator(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit, lonc, latc)
+    interp = itp.interpolator(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit)
 
     # init outputs 
     nt = len(roms_data.date)  # need to loop over time for each record

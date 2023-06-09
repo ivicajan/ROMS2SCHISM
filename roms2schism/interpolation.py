@@ -4,17 +4,13 @@
 import numpy as np
 from scipy.spatial import Delaunay, cKDTree
 from scipy.interpolate import interp1d
-from roms2schism.geometry import transform_ll_to_cpp
 
 class interpolator(object):
     """Class for spatial interpolator"""
 
-    def __init__(self, roms_grid, mask, coord_x, coord_y, dcrit, lonc, latc):
+    def __init__(self, roms_grid, mask, coord_x, coord_y, dcrit):
 
-        # transform to [m], the same projection as SCHISM:
-        x2, y2 = transform_ll_to_cpp(roms_grid.lonr, roms_grid.latr, lonc, latc)
-
-        self.XY = np.vstack((x2[mask], y2[mask])).T
+        self.XY = np.vstack((roms_grid.x[mask], roms_grid.y[mask])).T
         self.kdtree = cKDTree(self.XY)
         self.XYout = np.vstack((coord_x.ravel(),coord_y.ravel())).T   # the same for SCHISM sponge nodes
         self.dcrit = dcrit
