@@ -36,7 +36,8 @@ def save_nudging_nc(outfile, data, date, sponge_nodes):
     return
 
 def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
-                 roms_grid_filename = None, lonc = 175., latc = -37.):
+                 roms_grid_filename = None, roms_grid_dir = None,
+                 lonc = 175., latc = -37.):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
@@ -52,8 +53,9 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
     if roms_grid_filename is not None:
         fname = roms_grid_filename
     else:
-        fname = os.path.join(roms_dir, dates[0].strftime(template))
-    roms_grid = rs.roms_grid(fname, sponge_bbox)
+        roms_grid_dir = roms_dir
+        fname = dates[0].strftime(template)
+    roms_grid = rs.roms_grid(fname, roms_grid_dir, sponge_bbox)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
     roms_data = rs.roms_data(roms_grid, roms_dir, template, dates)

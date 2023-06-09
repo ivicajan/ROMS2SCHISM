@@ -9,10 +9,11 @@ from roms2schism import geometry as geom
 class roms_grid(object):
     """Class for ROMS grid"""
     
-    def __init__(self, filename, bbox):
+    def __init__(self, filename, grid_dir, bbox):
         """Reads ROMS grid data from ROMS grid file or output."""
 
         print('Reading roms grid %s...' % filename)
+        fname = os.path.join(grid_dir, filename)
         nc = Dataset(filename,'r')
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
@@ -70,7 +71,7 @@ class roms_data(object):
     def read(self, grid, roms_dir, filename, num_times = None, get_w = False):
         """Reads ROMS data from single file"""
 
-        print('Reading roms data file %s...' % filename)
+        print('Reading roms data %s...' % filename)
         fname = os.path.join(roms_dir, filename)
         nc = Dataset(fname,'r')
         times = nc.variables['ocean_time']

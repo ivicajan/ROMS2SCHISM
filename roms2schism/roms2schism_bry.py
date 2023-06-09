@@ -21,11 +21,13 @@ def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir =
     
     if bry is True:
         print('Making bry files for SCHISM')
-        bdy.make_boundary(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
+        bdy.make_boundary(schism, template, dates, dcrit, roms_dir,
+                          roms_grid_filename, roms_grid_dir, lonc, latc)
         
     if nudge is True:
         print('Making nudging files for SCHISM')
-        ndg.make_nudging(schism, template, dates, dcrit, roms_dir, roms_grid_filename)
+        ndg.make_nudging(schism, template, dates, dcrit, roms_dir,
+                         roms_grid_filename, roms_grid_dir, lonc, latc)
         
     return    
 
@@ -39,6 +41,7 @@ if __name__=='__main__':
     parser.add_argument('--schism_grid_dir', default='./', help='SCHISM grid directory')
     parser.add_argument('--roms_dir', default='./', help='ROMS output directory')
     parser.add_argument('--roms_grid_filename', default=None, help='ROMS grid filename (None if no grid required)')
+    parser.add_argument('--roms_grid_dir', default=None, help='ROMS grid directory (only needed if roms_grid_filename is not None)')
     parser.add_argument('--lonc', default=175.,  type=float, help='reference longitude for converting coordinates to metres')
     parser.add_argument('--latc', default=-37.,  type=float, help='reference latitude for converting coordinates to metres')
     parser.add_argument('--bry', default=False, help='make boundary file')

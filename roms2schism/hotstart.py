@@ -128,8 +128,8 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
     dst.close()
 
-def make_hotstart(schism, roms_data_filename, dcrit = 700,
-                  roms_dir = './', roms_grid_filename = None,
+def make_hotstart(schism, roms_data_filename, dcrit = 700, roms_dir = './',
+                  roms_grid_filename = None, roms_grid_dir = None,
                   lonc = 175., latc = -37., h0 = 0.01):
     """Creates hotstart.nc from initial results in ROMS output file.
     h0 is the minimum depth for wet nodes."""
@@ -137,8 +137,9 @@ def make_hotstart(schism, roms_data_filename, dcrit = 700,
     if roms_grid_filename is not None:
         fname = roms_grid_filename
     else:
-        fname = os.path.join(roms_dir, roms_data_filename)
-    roms_grid = rs.roms_grid(fname, schism.bbox)
+        roms_grid_dir = roms_dir
+        fname = roms_data_filename
+    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.bbox)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
     nt = 1                          # number of times
