@@ -14,7 +14,7 @@ ndays = 30
 dates = start_date + np.arange(ndays) * timedelta(days = 1)
 
 roms_dir = '/path/to/roms/data/'
-dcrit = 7e3
+dcrit = 7e3 # should be slightly larger than ROMS grid resolution
 
 # read SCHISM grid:
 schism = r2s.schism.schism_grid()
