@@ -18,7 +18,7 @@ class roms_grid(object):
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
         self.get_bbox_indices(lonr, latr, bbox)
-        print('bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(self.i0,self.i1,self.j0,self.j1))
+        print('  bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(self.i0,self.i1,self.j0,self.j1))
         self.h = nc.variables['h'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
         # if east/north velocities not present, need to rotate and process from staggered velocities:
         self.rotate = not all([var in nc.variables for var in ['u_eastward', 'v_northward']])
