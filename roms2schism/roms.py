@@ -9,7 +9,7 @@ from roms2schism import geometry as geom
 class roms_grid(object):
     """Class for ROMS grid"""
     
-    def __init__(self, filename, grid_dir, bbox):
+    def __init__(self, filename, grid_dir, bbox, lonc, latc):
         """Reads ROMS grid data from ROMS grid file or output."""
 
         print('Reading roms grid %s...' % filename)
@@ -27,6 +27,7 @@ class roms_grid(object):
         self.lonr = lonr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
         self.latr = latr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
         self.maskr = nc.variables['mask_rho'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        self.x, self.y = geom.transform_ll_to_cpp(self.lonr, self.latr, lonc, latc)
         nc.close()
 
     def get_bbox_indices(self, lon, lat, bbox):
