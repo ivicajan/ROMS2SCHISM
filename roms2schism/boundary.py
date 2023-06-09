@@ -64,7 +64,7 @@ def make_boundary(schism, template, dates, dcrit = 700, roms_dir = './',
     schism_salt = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schims is using (time, node, vert, 1) 
     schism_uv = np.zeros((nt, schism.NOP, schism.nvrt, 2))    # schims is using (time, node, vert, 2) 
 
-    print('total steps: %d ' %nt, end='>')
+    print('Interpolating...')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
         schism_zeta[it,:,0,0] = itp.interp2D(roms_data.zeta[it, mask_OK], interp)

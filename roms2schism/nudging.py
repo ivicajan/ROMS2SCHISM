@@ -70,7 +70,7 @@ def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
     schism_temp = np.zeros((nt, Np, schism.nvrt, 1))  # schims is using (time, node, vert, 1) 
     schism_salt = np.zeros((nt, Np, schism.nvrt, 1))  # schims is using (time, node, vert, 1)
 
-    print('Total steps: %d' %nt, end='>')
+    print('Interpolating...')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
         schism_zeta[it,:,0,0] = interp.interpolate(roms_data.zeta[it, mask_OK])
