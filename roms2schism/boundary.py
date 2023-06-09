@@ -36,8 +36,9 @@ def save_boundary_nc(outfile, data, date, schism):
     dst.close()     
     return
 
-def make_boundary(schism, template, dates, dcrit = 700, roms_dir = './',
-                  roms_grid_filename = None, roms_grid_dir = None):
+def make_boundary(schism, template, dates, roms_dir = './',
+                  roms_grid_filename = None, roms_grid_dir = None,
+                  dcrit = 700):
     # ## Part for boundary conditions ROMS -> SCHISM
 
     # part to load ROMS grid for given subset

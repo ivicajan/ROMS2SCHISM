@@ -10,8 +10,9 @@ from roms2schism import schism as sm
 from roms2schism import boundary as bdy
 from roms2schism import nudging as ndg
 
-def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir = './',
-         roms_dir = './', roms_grid_filename = None, lonc = None, latc = None):
+def main(dates, template, bry=False, nudge=False, schism_grid_dir = './',
+         roms_dir = './', roms_grid_filename = None,
+         lonc = None, latc = None, dcrit = 700):
     # ## Actual start of the roms2schism interpolation
     
     # part with reading SCHISM mesh
@@ -21,13 +22,13 @@ def main(dates, template, bry=False, nudge=False, dcrit = 700, schism_grid_dir =
     
     if bry is True:
         print('Making bry files for SCHISM')
-        bdy.make_boundary(schism, template, dates, dcrit, roms_dir,
-                          roms_grid_filename, roms_grid_dir)
+        bdy.make_boundary(schism, template, dates, roms_dir,
+                          roms_grid_filename, roms_grid_dir, dcrit)
         
     if nudge is True:
         print('Making nudging files for SCHISM')
-        ndg.make_nudging(schism, template, dates, dcrit, roms_dir,
-                         roms_grid_filename, roms_grid_dir)
+        ndg.make_nudging(schism, template, dates, roms_dir,
+                         roms_grid_filename, roms_grid_dir, dcrit)
         
 if __name__=='__main__':
     
@@ -49,6 +50,6 @@ if __name__=='__main__':
     # First call the prog to create bry file with template for his, and then again for nudge but now using template for avg
     args = parser.parse_args()
     dates = datetime.strptime(args.start_date,'%Y%m%d') + np.arange(args.ndays)*timedelta(days=1)
-    main(dates, args.template, args.bry, args.nudge, args.dcrit,
+    main(dates, args.template, args.bry, args.nudge,
          args.schism_grid_dir, args.roms_dir, args.roms_grid_filename,
-         args.lonc, args.latc)
+         args.lonc, args.latc, args.dcrit)

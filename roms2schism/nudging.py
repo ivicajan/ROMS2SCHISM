@@ -35,8 +35,9 @@ def save_nudging_nc(outfile, data, date, sponge_nodes):
     dst.close() 
     return
 
-def make_nudging(schism, template, dates, dcrit = 700, roms_dir = './',
-                 roms_grid_filename = None, roms_grid_dir = None):
+def make_nudging(schism, template, dates, roms_dir = './',
+                 roms_grid_filename = None, roms_grid_dir = None,
+                 dcrit = 700):
     # ## Part with nudging zone, 
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
