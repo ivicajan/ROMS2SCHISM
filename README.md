@@ -61,7 +61,7 @@ Hotstart files can be created like this:
 ```python
 r2s.hotstart.make_hotstart(schism, roms_data_filename, roms_dir,
                            roms_grid_filename, roms_grid_dir, dcrit, h0)
-``
+```
 
 For the initial conditions, only one ROMS data file is needed, specified via the `roms_data_filename` parameter. Most of the other parameters are the same as for creating boundary conditions and nudging. The `h0` parameter (default 0.01 m) specifies the water depth below which SCHISM nodes will be considered dry at the start of the run.
 
