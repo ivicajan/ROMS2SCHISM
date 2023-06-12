@@ -1,5 +1,5 @@
 # ROMS2SCHISM
-Tools for creating [SCHISM](http://ccrm.vims.edu/schismweb/) boundary condition forcing and hotstart files from ROMS output.
+A Python package for creating [SCHISM](http://ccrm.vims.edu/schismweb/) boundary condition forcing and hotstart files from ROMS output.
 
 The `roms2schism` module contains four main sub-modules:
 
@@ -39,7 +39,7 @@ The `schism` parameter is the SCHISM grid created above.
 
 The `template` and `dates` parameters are used to define the sequence of filenames for the ROMS files used to create the boundary conditions. The `dates` parameter is an array of `datetime` objects. These are processed using the `template` string to create the filenames. All the ROMS date files must be in the directory specified by `roms_dir`.
 
-The `roms_grid_filename` and `roms_grid_dir` parameters can be used to specify a ROMS grid file. This may be needed if the ROMS results do not contain the `u_eastward` and `v_northward` fields, in which case they are reconstructed (rotated and de-staggered) from the `u` and `v` fields.
+The `roms_grid_filename` and `roms_grid_dir` parameters can be used to specify a ROMS grid file. This may be needed if the ROMS results do not contain the `u_eastward` and `v_northward` fields, in which case they are reconstructed (rotated and de-staggered) from the `u` and `v` fields. Otherwise, these parameters do not need to be specified.
 
 The `dcrit` parameter specifies a critical distance used to avoid interpolating ROMS results over land. It should generally be slightly larger than the ROMS grid resolution. If SCHISM grid points are further than this distance from the nearest ROMS grid point, nearest neighbour interpolation is used instead of bilinear interpolation.
 
