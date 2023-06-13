@@ -51,49 +51,64 @@ class roms_grid(object):
 class roms_data(object):
     """Class for ROMS output data"""
 
-    def __init__(self, grid, roms_dir, filename, dates = None, num_times = None,
-                 get_w = False):
+    def __init__(self, grid, roms_dir, filename, dates = None, start = None,
+                 single = False, get_w = False):
 
         if dates is None: # read single file
-            self.read(grid, roms_dir, filename, num_times, get_w)
+            self.read(grid, roms_dir, filename, start, single, get_w)
         else:
             fname = dates[0].strftime(filename) # filename interpreted as a template
-            self.read(grid, roms_dir, fname, num_times = None, get_w = get_w)
+            self.read(grid, roms_dir, fname, start, single = False, get_w = get_w)
             if len(dates) > 1:
                 for date in dates[1:]:
                     try:
                         fname = date.strftime(filename)
-                        new = roms_data(grid, roms_dir, fname, num_times = None,
+                        new = roms_data(grid, roms_dir, fname, start, single = False,
                                         get_w = get_w)
                         self.append(new)
                     except:
                         continue
 
-    def read(self, grid, roms_dir, filename, num_times = None, get_w = False):
-        """Reads ROMS data from single file"""
+    def read(self, grid, roms_dir, filename, start = None, single = False, get_w = False):
+        """Reads ROMS data from single file. If single is False, all time
+        results are read after start (datetime), otherwise only one set of
+        results for the time nearest to start (or the first set of
+        results, if start is not specified).
+        """
 
-        print('Reading roms data %s...' % filename)
+        if start is None: start = dates[0]
+        timeword = 'at' if single else 'from'
+        print('Reading roms data %s %s %s...' % (filename, timeword,
+                                                 start.strftime('%H:%M:%S %d/%m/%Y')))
         fname = os.path.join(roms_dir, filename)
         nc = Dataset(fname,'r')
         times = nc.variables['ocean_time']
-        nt = np.size(times) if num_times is None else num_times
-        self.date = num2date(times[:nt], units=times.units, calendar='proleptic_gregorian')
+        dates = num2date(times[:], units = times.units, calendar = 'proleptic_gregorian')
+        if single:
+            if start is None: start = dates[0]
+            nt1 = np.argmin(np.array([abs(d - start) for d in dates]))
+            nt2 = nt1 + 1
+        else:
+            if start is None: nt1 = 0
+            else: nt1 = np.searchsorted(dates, start)
+            nt2 = np.size(times)
+        self.date = dates[nt1: nt2]
         i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
-        self.zeta = nc.variables['zeta'][:nt,(j0+1):(j1-1), (i0+1):(i1-1)]
+        self.zeta = nc.variables['zeta'][nt1:nt2, (j0+1):(j1-1), (i0+1):(i1-1)]
         if grid.rotate:
             # rotate and de-stagger velocities:
-            u = nc.variables['u'][:nt,:,(j0+1):(j1-1), i0:(i1-1)]
-            v = nc.variables['v'][:nt,:,j0:(j1-1), (i0+1):(i1-1)]
-            ur = 0.5*(u[:,:,:,:-1]+u[:,:,:,1:])
-            vr = 0.5*(v[:,:,:-1,:]+v[:,:,1:,:])
+            u = nc.variables['u'][nt1:nt2, :, (j0+1):(j1-1), i0:(i1-1)]
+            v = nc.variables['v'][nt1:nt2, :, j0:(j1-1), (i0+1):(i1-1)]
+            ur = 0.5*(u[:,:,:,:-1] + u[:,:,:,1:])
+            vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
             self.u, self.v = geom.rot2d(ur, vr, grid.angle)
         else:
-            self.u = nc.variables['u_eastward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-            self.v = nc.variables['v_northward'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+            self.u = nc.variables['u_eastward'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
+            self.v = nc.variables['v_northward'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
         if get_w:
-            self.w = nc.variables['w'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-        self.temp = nc.variables['temp'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
-        self.salt = nc.variables['salt'][:nt,:,(j0+1):(j1-1), (i0+1):(i1-1)]
+            self.w = nc.variables['w'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
+        self.temp = nc.variables['temp'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
+        self.salt = nc.variables['salt'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
         self.vtransform = nc.variables['Vtransform'][:]
         self.sc_r = nc.variables['s_rho'][:]
         self.Cs_r = nc.variables['Cs_r'][:]

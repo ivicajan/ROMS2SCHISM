@@ -128,7 +128,7 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
     dst.close()
 
-def make_hotstart(schism, roms_data_filename, roms_dir = './',
+def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
                   roms_grid_filename = None, roms_grid_dir = None,
                   dcrit = 700, h0 = 0.01):
     """Creates hotstart.nc from initial results in ROMS output file.
@@ -142,10 +142,10 @@ def make_hotstart(schism, roms_data_filename, roms_dir = './',
     roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.bbox, schism.lonc, schism.latc)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
-    nt = 1                          # number of times
 
     # read initial roms data:
-    roms_data = rs.roms_data(roms_grid, roms_dir, roms_data_filename, num_times = nt, get_w = True)
+    roms_data = rs.roms_data(roms_grid, roms_dir, roms_data_filename, start = start,
+                             single = True, get_w = True)
     
     node_interp = itp.interpolator(roms_grid,mask_OK, schism.xi, schism.yi, dcrit)
 

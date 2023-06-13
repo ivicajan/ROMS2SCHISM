@@ -36,7 +36,7 @@ def save_boundary_nc(outfile, data, date, schism):
     dst.close()     
     return
 
-def make_boundary(schism, template, dates, roms_dir = './',
+def make_boundary(schism, template, dates, start = None, roms_dir = './',
                   roms_grid_filename = None, roms_grid_dir = None,
                   dcrit = 700):
     # ## Part for boundary conditions ROMS -> SCHISM
@@ -51,7 +51,7 @@ def make_boundary(schism, template, dates, roms_dir = './',
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
-    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates)
+    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates, start)
     
     interp = itp.interpolator(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit)
 

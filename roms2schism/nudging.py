@@ -35,7 +35,7 @@ def save_nudging_nc(outfile, data, date, sponge_nodes):
     dst.close() 
     return
 
-def make_nudging(schism, template, dates, roms_dir = './',
+def make_nudging(schism, template, dates, start = None, roms_dir = './',
                  roms_grid_filename = None, roms_grid_dir = None,
                  dcrit = 700):
     # ## Part with nudging zone, 
@@ -58,7 +58,7 @@ def make_nudging(schism, template, dates, roms_dir = './',
     roms_grid = rs.roms_grid(fname, roms_grid_dir, sponge_bbox, schism.lonc, schism.latc)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
-    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates)
+    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates, start)
       
     interp = itp.interpolator(roms_grid, mask_OK, sponge_x, sponge_y, dcrit)
 

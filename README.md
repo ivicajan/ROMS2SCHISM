@@ -31,13 +31,15 @@ The `lonc`, `latc` parameters define a reference longitude and latitude, used to
 Boundary conditions can be created like this:
 
 ```python
-r2s.boundary.make_boundary(schism, template, dates, roms_dir,
+r2s.boundary.make_boundary(schism, template, dates, start, roms_dir,
                            roms_grid_filename, roms_grid_dir, dcrit)
 ```
 
 The `schism` parameter is the SCHISM grid created above.
 
 The `template` and `dates` parameters are used to define the sequence of filenames for the ROMS files used to create the boundary conditions. The `dates` parameter is an array of `datetime` objects. These are processed using the `template` string to create the filenames. All the ROMS date files must be in the directory specified by `roms_dir`.
+
+The `start` parameter defines the start `datetime` of the simulation. Boundary conditions are created from ROMS results at and after this date and time. Its default is `None`, in which case it is set equal to the first datetime in the ROMS results.
 
 The `roms_grid_filename` and `roms_grid_dir` parameters can be used to specify a ROMS grid file. This may be needed if the ROMS results do not contain the `u_eastward` and `v_northward` fields, in which case they are reconstructed (rotated and de-staggered) from the `u` and `v` fields. Otherwise, these parameters do not need to be specified.
 
@@ -48,7 +50,7 @@ The `dcrit` parameter specifies a critical distance used to avoid interpolating 
 Nudging files for temperature and salinity can be created like this:
 
 ```python
-r2s.nudging.make_nudging(schism, template, dates, roms_dir,
+r2s.nudging.make_nudging(schism, template, dates, start, roms_dir,
                          roms_grid_filename, roms_grid_dir, dcrit)
 ```
 
@@ -59,7 +61,7 @@ The parameters for nudging are the same as those for creating the boundary condi
 Hotstart files can be created like this:
 
 ```python
-r2s.hotstart.make_hotstart(schism, roms_data_filename, roms_dir,
+r2s.hotstart.make_hotstart(schism, roms_data_filename, start, roms_dir,
                            roms_grid_filename, roms_grid_dir, dcrit, h0)
 ```
 
@@ -73,9 +75,10 @@ import numpy as np
 import roms2schism as r2s
 
 # set up dates corresponding to ROMS files to be read:
-start_date = datetime(2017, 1, 1)
+start_filedate = datetime(2017, 1, 1)
 ndays = 30
-dates = start_date + np.arange(ndays) * timedelta(days = 1)
+dates = start_filedate + np.arange(ndays) * timedelta(days = 1)
+start_date = datetime(2017, 1, 12)
 
 roms_dir = '/path/to/roms/data/'
 dcrit = 7e3 # should be slightly larger than ROMS grid resolution
@@ -85,14 +88,14 @@ schism = r2s.schism.schism_grid()
 
 # create boundary forcing files:
 template = "foo_his_%Y%m%d.nc"
-r2s.boundary.make_boundary(schism, template, dates, roms_dir, dcrit = dcrit)
+r2s.boundary.make_boundary(schism, template, dates, start, roms_dir, dcrit = dcrit)
 
 # create boundary nudging files for T, S:
 template = "foo_avg_%Y%m%d.nc"
-r2s.nudging.make_nudging(schism, template, dates, roms_dir, dcrit = dcrit)
+r2s.nudging.make_nudging(schism, template, dates, start, roms_dir, dcrit = dcrit)
 
 # create hotstart.nc file:
 roms_data_filename = "foo_his_20170101.nc"
-r2s.hotstart.make_hotstart(schism, roms_data_filename, roms_dir, dcrit = dcrit)
+r2s.hotstart.make_hotstart(schism, roms_data_filename, start, roms_dir, dcrit = dcrit)
 
 ```
