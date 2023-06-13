@@ -67,7 +67,7 @@ def make_boundary(schism, template, dates, roms_dir = './',
     print('Interpolating...')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
-        schism_zeta[it,:,0,0] = itp.interp2D(roms_data.zeta[it, mask_OK], interp)
+        schism_zeta[it,:,0,0] = interp.interpolate(roms_data.zeta[it, mask_OK])
         # compute depths for each ROMS levels at the specific SCHISM locations
         roms_depths_at_schism_node = roms_data.depth_point(schism_zeta[it,:,0,0], interp.depth_interp)
         # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
