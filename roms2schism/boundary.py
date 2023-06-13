@@ -60,9 +60,9 @@ def make_boundary(schism, template, dates, roms_dir = './',
     Nz = len(roms_data.Cs_r)  # number of ROMS levels
     schism_depth = schism.b_depth                             # schism depths at the open bounday nodes [NOP, nvrt]
     schism_zeta = np.zeros((nt, schism.NOP,1,1))              # zeta is also needed to compute ROMS depths
-    schism_temp = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schims is using (time, node, vert, 1) 
-    schism_salt = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schims is using (time, node, vert, 1) 
-    schism_uv = np.zeros((nt, schism.NOP, schism.nvrt, 2))    # schims is using (time, node, vert, 2) 
+    schism_temp = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schism is using (time, node, vert, 1)
+    schism_salt = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schism is using (time, node, vert, 1)
+    schism_uv = np.zeros((nt, schism.NOP, schism.nvrt, 2))    # schism is using (time, node, vert, 2)
 
     print('Interpolating...')
     for it in progressbar(range(0, nt)):
