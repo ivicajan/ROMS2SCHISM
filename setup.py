@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name='roms2schism',
-    version='0.1.0',
+    version='0.8.0',
     description='A Python package for creating SCHISM boundary condition forcing and hotstart files from ROMS output',
     long_description=long_description,
     long_description_content_type="text/markdown",
