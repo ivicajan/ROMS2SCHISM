@@ -97,7 +97,6 @@ def make_boundary(schism, template, dates, roms_dir = './',
             temp_interp[k,:] = interp.interpolate(roms_data.v[it,k,][mask_OK])
         # now you need to interp temp for each NOP at SCHISM depths
         schism_uv[it,:,:,1] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
-    print('Done interpolating')
     # now you need to save them in the boundary files
     os.system('rm  -f elev2D.th.nc TEM_3D.th.nc SAL_3D.th.nc uv3D.th.nc')
     save_boundary_nc('elev2D.th.nc', schism_zeta, roms_data.date, schism)
