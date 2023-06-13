@@ -1,5 +1,5 @@
 # ROMS2SCHISM
-A Python package for creating [SCHISM](http://ccrm.vims.edu/schismweb/) boundary condition forcing and hotstart files from ROMS output.
+A Python package for creating [SCHISM](http://ccrm.vims.edu/schismweb/) boundary condition forcing and hotstart files from [ROMS](https://www.myroms.org/) output.
 
 The `roms2schism` module contains four main sub-modules:
 
