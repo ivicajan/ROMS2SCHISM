@@ -88,14 +88,14 @@ schism = r2s.schism.schism_grid()
 
 # create boundary forcing files:
 template = "foo_his_%Y%m%d.nc"
-r2s.boundary.make_boundary(schism, template, dates, start, roms_dir, dcrit = dcrit)
+r2s.boundary.make_boundary(schism, template, dates, start_date, roms_dir, dcrit = dcrit)
 
 # create boundary nudging files for T, S:
 template = "foo_avg_%Y%m%d.nc"
-r2s.nudging.make_nudging(schism, template, dates, start, roms_dir, dcrit = dcrit)
+r2s.nudging.make_nudging(schism, template, dates, start_date, roms_dir, dcrit = dcrit)
 
 # create hotstart.nc file:
 roms_data_filename = "foo_his_20170101.nc"
-r2s.hotstart.make_hotstart(schism, roms_data_filename, start, roms_dir, dcrit = dcrit)
+r2s.hotstart.make_hotstart(schism, roms_data_filename, start_date, roms_dir, dcrit = dcrit)
 
 ```
