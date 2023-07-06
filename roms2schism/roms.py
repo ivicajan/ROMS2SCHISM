@@ -131,13 +131,17 @@ class roms_data(object):
         '''
         appends variables from new along axis 0 (time)
         '''
-        self.date = np.append(self.date, new.date, axis=0)
-        self.zeta = np.append(self.zeta, new.zeta, axis=0)
-        self.u = np.append(self.u, new.u, axis=0)
-        self.v = np.append(self.v, new.v, axis=0)
-        if get_w: np.append(self.w, new.w, axis=0)
-        self.temp = np.append(self.temp, new.temp, axis=0)
-        self.salt = np.append(self.salt, new.salt, axis=0)
+        if new.date[0] > self.date[-1]:
+            i0 = 0
+        else: # handle overlap:
+            i0 = min(np.searchsorted(new.date, self.date[-1]) + 1, len(new.date))
+        self.date = np.append(self.date, new.date[i0:], axis = 0)
+        self.zeta = np.append(self.zeta, new.zeta[i0:], axis = 0)
+        self.u = np.append(self.u, new.u[i0:], axis = 0)
+        self.v = np.append(self.v, new.v[i0:], axis = 0)
+        if get_w: np.append(self.w, new.w[i0:], axis = 0)
+        self.temp = np.append(self.temp, new.temp[i0:], axis = 0)
+        self.salt = np.append(self.salt, new.salt[i0:], axis = 0)
 
     def depth_point(self, zeta, h, w = False):
         """Depths for given zeta and h. If w is True, return w levels rather
