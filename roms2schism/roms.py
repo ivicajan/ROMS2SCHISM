@@ -62,46 +62,52 @@ class roms_data(object):
     """Class for ROMS output data"""
 
     def __init__(self, grid, roms_dir, filename, dates = None, start = None,
-                 single = False, get_w = False):
+                 end = None, single = False, get_w = False):
 
         if dates is None: # read single file
-            self.read(grid, roms_dir, filename, start, single, get_w)
+            self.read(grid, roms_dir, filename, start, end, single, get_w)
         else:
             fname = dates[0].strftime(filename) # filename interpreted as a template
-            self.read(grid, roms_dir, fname, start, single = False, get_w = get_w)
+            self.read(grid, roms_dir, fname, start, end, get_w = get_w)
             if len(dates) > 1:
                 for date in dates[1:]:
                     try:
                         fname = date.strftime(filename)
-                        new = roms_data(grid, roms_dir, fname, start, single = False,
-                                        get_w = get_w)
+                        new = roms_data(grid, roms_dir, fname, dates = None,
+                                        start = start, end = end, get_w = get_w)
                         self.append(new)
+                        if end is not None:
+                            if self.date[-1] >= end: break
                     except:
                         continue
 
-    def read(self, grid, roms_dir, filename, start = None, single = False, get_w = False):
+    def read(self, grid, roms_dir, filename, start = None, end = None, single = False,
+             get_w = False):
         """Reads ROMS data from single file. If single is False, all time
-        results are read after start (datetime), otherwise only one set of
-        results for the time nearest to start (or the first set of
-        results, if start is not specified).
+        results are read between start (datetime) and end, otherwise
+        only one set of results for the time nearest to start. If
+        start or end are not specified, they are assumed to be the
+        first and last datetimes respectively in the file.
         """
 
-        if start is None: start = dates[0]
-        timeword = 'at' if single else 'from'
-        print('Reading roms data %s %s %s...' % (filename, timeword,
-                                                 start.strftime('%H:%M:%S %d/%m/%Y')))
         fname = os.path.join(roms_dir, filename)
         nc = Dataset(fname,'r')
         times = nc.variables['ocean_time']
         dates = num2date(times[:], units = times.units, calendar = 'proleptic_gregorian')
+        if start is None: start = dates[0]
+        if end is None: end = dates[-1]
+        outdatefmt = '%H:%M:%S %d/%m/%Y'
         if single:
-            if start is None: start = dates[0]
-            nt1 = np.argmin(np.array([abs(d - start) for d in dates]))
-            nt2 = nt1 + 1
+            nt1 = np.searchsorted(dates, start)
+            nt2 = min(nt1 + 1, len(dates))
+            print('Reading roms data %s: %s...' % (filename,
+                                                      dates[nt1].strftime(outdatefmt)))
         else:
-            if start is None: nt1 = 0
-            else: nt1 = np.searchsorted(dates, start)
-            nt2 = np.size(times)
+            nt1 = np.searchsorted(dates, start)
+            nt2 = min(np.searchsorted(dates, end) + 1, len(dates))
+            print('Reading roms data %s: %s - %s...' % (filename,
+                                                             dates[nt1].strftime(outdatefmt),
+                                                             dates[nt2 - 1].strftime(outdatefmt)))
         self.date = dates[nt1: nt2]
         i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
         self.zeta = nc.variables['zeta'][nt1:nt2, (j0+1):(j1-1), (i0+1):(i1-1)]
