@@ -29,14 +29,14 @@ class roms_grid(object):
         latr = nc.variables['lat_rho'][:]
         self.get_bbox_indices(lonr, latr, bbox)
         print('  bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(self.i0,self.i1,self.j0,self.j1))
-        self.h = nc.variables['h'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+        self.h = nc.variables['h'][self.j0:self.j1, self.i0:self.i1]
         # if east/north velocities not present, need to rotate and process from staggered velocities:
         self.rotate = not all([var in nc.variables for var in ['u_eastward', 'v_northward']])
         if self.rotate:
-            self.angle = nc.variables['angle'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
-        self.lonr = lonr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
-        self.latr = latr[(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
-        self.maskr = nc.variables['mask_rho'][(self.j0+1):(self.j1-1), (self.i0+1):(self.i1-1)]
+            self.angle = nc.variables['angle'][self.j0:self.j1, self.i0:self.i1]
+        self.lonr = lonr[self.j0:self.j1, self.i0:self.i1]
+        self.latr = latr[self.j0:self.j1, self.i0:self.i1]
+        self.maskr = nc.variables['mask_rho'][self.j0:self.j1, self.i0:self.i1]
         self.x, self.y = geom.transform_ll_to_cpp(self.lonr, self.latr, lonc, latc)
         nc.close()
 
@@ -50,13 +50,11 @@ class roms_grid(object):
         n, m = np.shape(lon)
         inside = p.contains_points(points).reshape((n, m))
         ii, jj = np.meshgrid(list(range(m)), list(range(n)))
-        self.i0, self.i1, self.j0, self.j1 = min(ii[inside])-1, max(ii[inside]), \
-                                             min(jj[inside])-1, max(jj[inside])+3
+        self.i0, self.i1, self.j0, self.j1 = min(ii[inside]) - 1, max(ii[inside]) + 2, \
+            min(jj[inside]) - 1, max(jj[inside]) + 2
         ny, nx = np.shape(lon)
-        if self.i0 < 0: self.i0 = 0
-        if self.i1 > nx-1: self.i0 = nx
-        if self.j0 < 0: self.j0 = 0
-        if self.j1 > ny-1: self.j1 = ny
+        self.i0, self.i1 = max(self.i0, 0), min(self.i1, nx)
+        self.j0, self.j1 = max(self.j0, 0), min(self.j1, ny)
 
 class roms_data(object):
     """Class for ROMS output data"""
@@ -104,21 +102,21 @@ class roms_data(object):
             nt2 = np.size(times)
         self.date = dates[nt1: nt2]
         i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
-        self.zeta = nc.variables['zeta'][nt1:nt2, (j0+1):(j1-1), (i0+1):(i1-1)]
+        self.zeta = nc.variables['zeta'][nt1:nt2, j0:j1, i0:i1]
         if grid.rotate:
             # rotate and de-stagger velocities:
-            u = nc.variables['u'][nt1:nt2, :, (j0+1):(j1-1), i0:(i1-1)]
-            v = nc.variables['v'][nt1:nt2, :, j0:(j1-1), (i0+1):(i1-1)]
+            u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1)]
+            v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1)]
             ur = 0.5*(u[:,:,:,:-1] + u[:,:,:,1:])
             vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
             self.u, self.v = geom.rot2d(ur, vr, grid.angle)
         else:
-            self.u = nc.variables['u_eastward'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
-            self.v = nc.variables['v_northward'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
+            self.u = nc.variables['u_eastward'][nt1:nt2, :, j0:j1, i0:i1]
+            self.v = nc.variables['v_northward'][nt1:nt2, :, j0:j1, i0:i1]
         if get_w:
-            self.w = nc.variables['w'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
-        self.temp = nc.variables['temp'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
-        self.salt = nc.variables['salt'][nt1:nt2, :, (j0+1):(j1-1), (i0+1):(i1-1)]
+            self.w = nc.variables['w'][nt1:nt2, :, j0:j1, i0:i1]
+        self.temp = nc.variables['temp'][nt1:nt2, :, j0:j1, i0:i1]
+        self.salt = nc.variables['salt'][nt1:nt2, :, j0:j1, i0:i1]
         self.vtransform = nc.variables['Vtransform'][:]
         self.sc_r = nc.variables['s_rho'][:]
         self.Cs_r = nc.variables['Cs_r'][:]
