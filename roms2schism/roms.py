@@ -111,8 +111,8 @@ class roms_data(object):
         self.zeta = nc.variables['zeta'][nt1:nt2, j0:j1, i0:i1]
         if grid.rotate:
             # rotate and de-stagger velocities:
-            u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1)]
-            v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1)]
+            u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1]
+            v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1]
             ur = 0.5*(u[:,:,:,:-1] + u[:,:,:,1:])
             vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
             self.u, self.v = geom.rot2d(ur, vr, grid.angle)
