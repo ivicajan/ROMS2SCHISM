@@ -50,44 +50,35 @@ class schism_grid(object):
     def __init__(self, schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
                  schism_grid_dir = './', lonc = None, latc = None):
 
-        bbox_offset = 0.01
+        self.bbox_offset = 0.01
         print('Reading SCHISM grid %s, %s...' % (schism_grid_file, schism_vgrid_file))
-        # get schism mesh
+        # get schism hgrid
         hgrid_filename = os.path.join(schism_grid_dir, schism_grid_file)
         hgrid = Hgrid.open(hgrid_filename,  crs = 'EPSG:4326')
-        # get schism depths
-        vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
-        vd = Vgrid.open(vgrid_filename)
-        sigma = vd.sigma              # sigma values for vertical grid
-        depth = hgrid.values          # this is grid bathymery
-        zcor = depth[:,None] * sigma  # this is 2D array with layer depths at [nodes, layers]
-        nvrt = zcor.shape[1]          # number of SCHISM layers
-
         self.lon = hgrid.coords[:,0]
         self.lat = hgrid.coords[:,1]
         self.lonc = np.average(self.lon) if lonc is None else lonc # reference coords
         self.latc = np.average(self.lat) if latc is None else latc # for conversion
-        x, y = transform_ll_to_cpp(self.lon, self.lat,
+        self.xi, self.yi = transform_ll_to_cpp(self.lon, self.lat,
                                    self.lonc, self.latc) # transform them to meters
-
-        # get SCHISM open boundaries from grid file
-        gdf = hgrid.boundaries.open.copy()
-        opbd = gdf.indexes[0]       # need only first open boundary as 2nd is river
-        zcor2 = zcor[opbd,:]        # depths at the boundary nodes
-        blon = hgrid.coords[opbd,0]  # OB lons
-        blat = hgrid.coords[opbd,1]  # OB lats
-        NOP = len(blon)              # number of open boundary nodes
-        self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
-        self.b_bbox = bbox(blon, blat, offset = bbox_offset)
-        self.NOP = NOP
-        self.nvrt = nvrt
-        self.b_lon = blon
-        self.b_lat = blat
-        self.b_depth = zcor2
-        self.xi = x
-        self.yi = y
+        self.bbox = bbox(self.lon, self.lat, offset = self.bbox_offset)
+        self.depth = -hgrid.values # bottom depths from datum
         self.triangles = hgrid.triangles
         self.elements = hgrid.elements.array
         self.sides = hgrid.elements.sides
-        self.depth = zcor
-        self.bbox = bbox(self.lon, self.lat, offset = bbox_offset)
+
+        # get schism vgrid
+        vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
+        vd = Vgrid.open(vgrid_filename)
+        self.sigma = vd.sigma[:,:]         # sigma values for vertical grid
+        self.nvrt = self.sigma.shape[1]               # number of SCHISM layers
+
+
+        # get SCHISM open boundary from grid file
+        gdf = hgrid.boundaries.open.copy()
+        self.open_bdy_indices = gdf.indexes[0] # need only first open boundary as 2nd is river
+        blon = self.lon[self.open_bdy_indices]
+        blat = self.lat[self.open_bdy_indices]
+        self.bdy_bbox = bbox(blon, blat, offset = self.bbox_offset)
+        self.bdy_x = self.xi[self.open_bdy_indices]
+        self.bdy_y = self.yi[self.open_bdy_indices]
