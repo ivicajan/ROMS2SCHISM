@@ -26,8 +26,7 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
     # dimensions:
     dst.createDimension('one_new', 1)
-    nnodes = len(eta2_data)
-    dst.createDimension('node', nnodes)
+    dst.createDimension('node', schism.nnodes)
     dst.createDimension('elem', w_data.shape[0])
     dst.createDimension('side', su2_data.shape[0])
     dst.createDimension('nVert', su2_data.shape[1])
@@ -52,7 +51,7 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     # dry nodes, sides, elements:
 
     idry = dst.createVariable('idry', 'i4', ('node'))
-    dry_node = np.zeros(nnodes)
+    dry_node = np.zeros(schism.nnodes)
     dry_node[np.where(eta2_data < -schism.depth + h0)] = 1
     dst['idry'][:] = dry_node
     idry.long_name = "wet/dry flag at nodes"
@@ -169,9 +168,6 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
 
     Nz = len(roms_data.Cs_r)  # number of ROMS rho levels
     Nw = len(roms_data.Cs_w)  # number of ROMS w levels
-    nnodes = len(schism.xi)   # number of SCHISM nodes
-    nsides = len(schism.sides) # number of SCHISM sides 
-    nelts = len(schism.elements) # number of SCHISM elements
 
     schism_zeta = node_interp.interpolate(roms_data.zeta[0, mask_OK])
     schism_elt_zeta = elt_interp.interpolate(roms_data.zeta[0, mask_OK])
@@ -189,31 +185,31 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
     roms_side_z = roms_data.node_elevations(schism_side_zeta, side_interp.depth)
 
     print('Interpolating temperature...')
-    val = np.zeros((Nz, nnodes))
+    val = np.zeros((Nz, schism.nnodes))
     for k in progressbar(range(0, Nz)):
         val[k,:] = node_interp.interpolate(roms_data.temp[0,k,][mask_OK])
     schism_temp = itp.vert_interp(val, roms_z, schism_node_z)
 
     print('Interpolating salt...')
-    val = np.zeros((Nz, nnodes))
+    val = np.zeros((Nz, schism.nnodes))
     for k in progressbar(range(0, Nz)):
         val[k,:] = node_interp.interpolate(roms_data.salt[0,k,][mask_OK])
     schism_salt = itp.vert_interp(val, roms_z, schism_node_z)
 
     print('Interpolating u...')
-    val = np.zeros((Nz, nsides))
+    val = np.zeros((Nz, schism.nsides))
     for k in progressbar(range(0, Nz)):
         val[k,:] = side_interp.interpolate(roms_data.u[0,k,][mask_OK])
     schism_su2 = itp.vert_interp(val, roms_side_z, schism_side_z)
 
     print('Interpolating v...')
-    val = np.zeros((Nz, nsides))
+    val = np.zeros((Nz, schism.nsides))
     for k in progressbar(range(0, Nz)):
         val[k,:] = side_interp.interpolate(roms_data.v[0,k,][mask_OK])
     schism_sv2 = itp.vert_interp(val, roms_side_z, schism_side_z)
 
     print('Interpolating w...')
-    val = np.zeros((Nw, nelts))
+    val = np.zeros((Nw, schism.nelts))
     for k in progressbar(range(0, Nw)):
         val[k,:] = elt_interp.interpolate(roms_data.w[0,k,][mask_OK])
     schism_w = itp.vert_interp(val, roms_elt_z, schism_elt_z)

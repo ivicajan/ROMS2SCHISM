@@ -66,6 +66,9 @@ class schism_grid(object):
         self.triangles = hgrid.triangles
         self.elements = hgrid.elements.array
         self.sides = hgrid.elements.sides
+        self.nnodes = len(self.depth)
+        self.nsides = len(self.sides)
+        self.nelts = len(self.elements)
 
         # get schism vgrid
         vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
