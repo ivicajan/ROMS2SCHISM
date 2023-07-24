@@ -73,9 +73,12 @@ class schism_grid(object):
         # get schism vgrid
         vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
         vd = Vgrid.open(vgrid_filename)
+        self.ivcor = vd.ivcor  # vertical coordinate system (1 for LSC2, 2 for SZ)
         self.sigma = vd.sigma[:,:]         # sigma values for vertical grid
-        self.nvrt = self.sigma.shape[1]               # number of SCHISM layers
+        self.nvrt = self.sigma.shape[1]    # number of SCHISM layers
 
+        if self.ivcor == 2: # for SZ, compute node elevations for zero zeta
+            self.z0 = (self.depth * self.sigma.T).T
 
         # get SCHISM open boundary from grid file
         gdf = hgrid.boundaries.open.copy()
@@ -87,13 +90,24 @@ class schism_grid(object):
         self.bdy_y = self.yi[self.open_bdy_indices]
 
     def node_elevations(self, zeta, indices = None):
-        """3D node elevations at specified (or all) nodes, for given zeta."""
+        """3D node elevations at specified (or all) nodes, for given zeta. If
+        indices are specified, zeta is assumed to contain values only for
+        those indices."""
+
         z = np.zeros((len(zeta), self.nvrt))
-        if indices:
-            depth = self.depth[indices]
-            for k in range(self.nvrt):
-                z[:, k] = zeta + (zeta + depth) * self.sigma[indices, k]
-        else:
-            for k in range(self.nvrt):
-                z[:, k] = zeta + (zeta + self.depth) * self.sigma[:, k]
+        if self.ivcor == 1: # LSC2
+            if indices:
+                depth = self.depth[indices]
+                h = zeta + depth
+                for k in range(self.nvrt):
+                    z[:, k] = zeta + h * self.sigma[indices, k]
+            else:
+                h = zeta + self.depth
+                for k in range(self.nvrt):
+                    z[:, k] = zeta + h * self.sigma[:, k]
+        else: # SZ - zeta not taken into account
+            if indices:
+                z = self.z0[indices, :]
+            else:
+                z = self.z0
         return z
