@@ -57,56 +57,53 @@ def make_boundary(schism, template, dates, start = None, end = None, roms_dir = 
     else:
         roms_grid_dir = roms_dir
         fname = dates[0].strftime(template)
-    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.b_bbox, schism.lonc, schism.latc)
+    roms_grid = rs.roms_grid(fname, roms_grid_dir, schism.bdy_bbox, schism.lonc, schism.latc)
 
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
-
     roms_data = rs.roms_data(roms_grid, roms_dir, template, dates, start, end)
-    
-    interp = itp.interpolator(roms_grid, mask_OK, schism.b_xi, schism.b_yi, dcrit)
+
+    interp = itp.interpolator(roms_grid, mask_OK, schism.bdy_x, schism.bdy_y, dcrit)
 
     # init outputs 
     nt = len(roms_data.date)  # need to loop over time for each record
     Nz = len(roms_data.Cs_r)  # number of ROMS levels
-    schism_depth = schism.b_depth                             # schism depths at the open bounday nodes [NOP, nvrt]
-    schism_zeta = np.zeros((nt, schism.NOP,1,1))              # zeta is also needed to compute ROMS depths
-    schism_temp = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schism is using (time, node, vert, 1)
-    schism_salt = np.zeros((nt, schism.NOP, schism.nvrt, 1))  # schism is using (time, node, vert, 1)
-    schism_uv = np.zeros((nt, schism.NOP, schism.nvrt, 2))    # schism is using (time, node, vert, 2)
+    Nbdy = len(schism.open_bdy_indices)
+    schism_zeta = np.zeros((nt, Nbdy, 1, 1))  # zeta is also needed to compute ROMS depths
+    schism_temp = np.zeros((nt, Nbdy, schism.nvrt, 1))  # schism is using (time, node, vert, 1)
+    schism_salt = np.zeros((nt, Nbdy, schism.nvrt, 1))  # schism is using (time, node, vert, 1)
+    schism_uv = np.zeros((nt, Nbdy, schism.nvrt, 2))    # schism is using (time, node, vert, 2)
 
     print('Interpolating...')
     for it in progressbar(range(0, nt)):
         # get first zeta as I need it for depth calculation
         schism_zeta[it,:,0,0] = interp.interpolate(roms_data.zeta[it, mask_OK])
-        # compute depths for each ROMS levels at the specific SCHISM locations
-        roms_depths_at_schism_node = roms_data.depth_point(schism_zeta[it,:,0,0], interp.depth_interp)
-        # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
-        temp_interp = np.zeros((Nz, schism.NOP))   # this is temp at ROMS levels
+        # compute elevations for each ROMS levels at the specific SCHISM locations
+        roms_z = roms_data.node_elevations(schism_zeta[it,:,0,0], interp.depth)
+        schism_z = schism.node_elevations(schism_zeta[it,:,0,0], schism.open_bdy_indices)
+
+        temp_interp = np.zeros((Nz, Nbdy))   # this is temp at ROMS levels
         for k in range(0, Nz):   
             temp_interp[k,:] = interp.interpolate(roms_data.temp[it,k,][mask_OK])
         # interpolate in vertical to SCHISM depths
-        schism_temp[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
+        schism_temp[it,:,:,0] = itp.vert_interp(temp_interp, roms_z, schism_z)
 
-        # interp salt variable 
-        temp_interp = np.zeros((Nz, schism.NOP))
+        # interpolate salt variable
+        temp_interp = np.zeros((Nz, Nbdy))
         for k in range(0,Nz):
             temp_interp[k,:] = interp.interpolate(roms_data.salt[it,k,][mask_OK])
-        # now you need to interp temp for each NOP at SCHISM depths
-        schism_salt[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
+        schism_salt[it,:,:,0] = itp.vert_interp(temp_interp, roms_z, schism_z)
 
-        # interp u variable 
-        temp_interp = np.zeros((Nz, schism.NOP))
+        # interpolate u variable
+        temp_interp = np.zeros((Nz, Nbdy))
         for k in range(0,Nz):
             temp_interp[k,:] = interp.interpolate(roms_data.u[it,k,][mask_OK])
-        # now you need to interp temp for each NOP at SCHISM depths
-        schism_uv[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
+        schism_uv[it,:,:,0] = itp.vert_interp(temp_interp, roms_z, schism_z)
 
-        # interp v variable 
-        temp_interp = np.zeros((Nz, schism.NOP))
+        # interpolate v variable
+        temp_interp = np.zeros((Nz, Nbdy))
         for k in range(0,Nz):
             temp_interp[k,:] = interp.interpolate(roms_data.v[it,k,][mask_OK])
-        # now you need to interp temp for each NOP at SCHISM depths
-        schism_uv[it,:,:,1] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -schism_depth)
+        schism_uv[it,:,:,1] = itp.vert_interp(temp_interp, roms_z, schism_z)
     # now you need to save them in the boundary files
     os.system('rm  -f elev2D.th.nc TEM_3D.th.nc SAL_3D.th.nc uv3D.th.nc')
     save_boundary_nc('elev2D.th.nc', schism_zeta, roms_data.date, schism)

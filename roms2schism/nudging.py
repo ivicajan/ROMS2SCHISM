@@ -37,7 +37,7 @@ def save_nudging_nc(outfile, data, date, sponge_nodes):
     dst.createDimension('nComponents', data.shape[3])
     #variables
     dst.createVariable('map_to_global_node', 'i4', ('node',))
-    dst['map_to_global_node'][:] = sponge_nodes+1
+    dst['map_to_global_node'][:] = np.array(sponge_nodes) + 1
     dst.createVariable('time', 'f', ('time',))
     dst['time'][:] = date2num(date[:],'seconds since 1900-1-1') - date2num(date[0],'seconds since 1900-1-1')
     dst.createVariable('tracer_concentration', 'f', ('time', 'node', 'nLevels', 'nComponents'))
@@ -52,11 +52,9 @@ def make_nudging(schism, template, dates, start = None, end = None, roms_dir = '
     # ### it needs more points (defined in nudge.gr3) and that file is made using gen_nudge.f90
 
     sponge = sm.gr3('nudge.gr3')
-    OK = np.where(sponge.z != 0)
-    sponge_x = sponge.x[OK]; sponge_y = sponge.y[OK]; sponge_depth = schism.depth[OK]; 
-    np.shape(sponge_x), np.shape(sponge_depth)
-
-    # repeat all that we had for boundaries but now for "OK" points
+    sponge_indices = np.where(sponge.z != 0)
+    sponge_x, sponge_y = sponge.x[sponge_indices], sponge.y[sponge_indices]
+    sponge_depth = schism.depth[sponge_indices]
     sponge_bbox = geo.bbox(sponge_x, sponge_y, offset = 0.01)
 
     # part to load ROMS grid for given subset
@@ -85,21 +83,19 @@ def make_nudging(schism, template, dates, start = None, end = None, roms_dir = '
         # get first zeta as I need it for depth calculation
         schism_zeta[it,:,0,0] = interp.interpolate(roms_data.zeta[it, mask_OK])
         # compute depths for each ROMS levels at the specific SCHISM locations
-        roms_depths_at_schism_node = roms_data.depth_point(schism_zeta[it,:,0,0], interp.depth_interp)
-        # start with temperature variable for each ROMS layer, need to do that for all 3D variables (temp, salt, u, v)
+        roms_z = roms_data.node_elevations(schism_zeta[it,:,0,0], interp.depth)
+        schism_z = schism.node_elevations(schism_zeta[it,:,0,0], sponge_indices)
+
         temp_interp = np.zeros((Nz, Np))   # this is temp at ROMS levels
         for k in range(0, Nz):   
             temp_interp[k,:] = interp.interpolate(roms_data.temp[it,k,][mask_OK])
-        # interpolate in vertical to SCHISM depths
-        schism_temp[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -sponge_depth)
-        # interp salt variable 
+        schism_temp[it,:,:,0] = itp.vert_interp(temp_interp, roms_z, schism_z)
         temp_interp = np.zeros((Nz, Np))
         for k in range(0,Nz):
             temp_interp[k,:] = interp.interpolate(roms_data.salt[it,k,][mask_OK])
-        # now you need to interp temp for each NOP at SCHISM depths
-        schism_salt[it,:,:,0] = itp.vert_interp(temp_interp, roms_depths_at_schism_node, -sponge_depth)
+        schism_salt[it,:,:,0] = itp.vert_interp(temp_interp, roms_z, schism_z)
 
     os.system('rm -f TEM_nu.nc SAL_nu.nc')
     # now you need to save them in the boundary files
-    save_nudging_nc('TEM_nu.nc', schism_temp, roms_data.date, np.array(OK))
-    save_nudging_nc('SAL_nu.nc', schism_salt, roms_data.date, np.array(OK))
+    save_nudging_nc('TEM_nu.nc', schism_temp, roms_data.date, sponge_indices)
+    save_nudging_nc('SAL_nu.nc', schism_salt, roms_data.date, sponge_indices)
