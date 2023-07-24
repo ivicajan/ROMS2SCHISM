@@ -82,3 +82,15 @@ class schism_grid(object):
         self.bdy_bbox = bbox(blon, blat, offset = self.bbox_offset)
         self.bdy_x = self.xi[self.open_bdy_indices]
         self.bdy_y = self.yi[self.open_bdy_indices]
+
+    def node_elevations(self, zeta, indices = None):
+        """3D node elevations at specified (or all) nodes, for given zeta."""
+        z = np.zeros((len(zeta), self.nvrt))
+        if indices:
+            depth = self.depth[indices]
+            for k in range(self.nvrt):
+                z[:, k] = zeta + (zeta + depth) * self.sigma[indices, k]
+        else:
+            for k in range(self.nvrt):
+                z[:, k] = zeta + (zeta + self.depth) * self.sigma[:, k]
+        return z
