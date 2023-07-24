@@ -147,9 +147,10 @@ class roms_data(object):
         self.temp = np.append(self.temp, new.temp[i0:], axis = 0)
         self.salt = np.append(self.salt, new.salt[i0:], axis = 0)
 
-    def depth_point(self, zeta, h, w = False):
-        """Depths for given zeta and h. If w is True, return w levels rather
-        than rho."""
+    def node_elevations(self, zeta, h, w = False):
+        """3D node elevations for given zeta and h. If w is True, return w
+        levels rather than rho.
+        """
         sc, Cs = (self.sc_w, self.Cs_w) if w else (self.sc_r, self.Cs_r)
         N = len(sc)
         r = range(N)
