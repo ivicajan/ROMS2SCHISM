@@ -94,7 +94,7 @@ class roms_data(object):
         dates = num2date(times[:], units = times.units, calendar = 'proleptic_gregorian')
         if start is None: start = dates[0]
         if end is None: end = dates[-1]
-        outdatefmt = '%H:%M:%S %d/%m/%Y'
+        outdatefmt = '%d/%m/%Y %H:%M:%S'
         if single:
             nt1 = np.searchsorted(dates, start)
             nt2 = min(nt1 + 1, len(dates))
