@@ -27,7 +27,7 @@ class interpolator(object):
         self.calc_weights()
 
         # interpolate 2D depth which is time invariant
-        self.depth_interp = self.interpolate(roms_grid.h[mask])
+        self.depth = self.interpolate(roms_grid.h[mask])
 
     def calc_weights(self):
         """Calculate interpolation weights"""
@@ -58,26 +58,26 @@ class interpolator(object):
                 r, c = self.kdtree.query(self.XYout[i])
                 self.closest_in.append(c)
 
-    def interpolate(self, z):
+    def interpolate(self, val):
         """
         Perform the interpolation
         """
-        out = (z[self.verts]*self.weights).sum(axis=1)
+        out = (val[self.verts] * self.weights).sum(axis = 1)
         for i, closest in zip(self.use_closest, self.closest_in):
-            out[i] = z[closest]
+            out[i] = val[closest]
         return out
 
-def vert_interp(temp_interp, roms_depths_at_schism_pt, schism_depth):
-    """Vertical interpolation"""
+def vert_interp(val, roms_z, schism_z):
+    """Vertical interpolation from ROMS to SCHISM elevations."""
 
-    schism_temp = np.zeros((np.size(schism_depth,0), np.size(schism_depth,1)))  # schism is using (node, level)
-    tmp_depth = np.zeros((roms_depths_at_schism_pt.shape[0]))
-    tmp_var  = np.zeros((roms_depths_at_schism_pt.shape[0]))
-    for n in range(0, np.size(schism_depth,0)):
-        tmp_depth = roms_depths_at_schism_pt[:,n]
-        tmp_var = temp_interp[:,n]
-        f = interp1d(tmp_depth, tmp_var, kind='linear', bounds_error = False,
-                     fill_value = (tmp_var[0], tmp_var[-1]))
-        schism_temp[n,:] = f(schism_depth[n,:])
-    return schism_temp
+    schism_val = np.zeros((np.size(schism_z,0), np.size(schism_z,1)))  # schism is using (node, level)
+    tmp_z = np.zeros((roms_z.shape[0]))
+    tmp_val  = np.zeros((roms_z.shape[0]))
+    for n in range(0, np.size(schism_z,0)):
+        tmp_z = roms_z[:,n]
+        tmp_val = val[:,n]
+        f = interp1d(tmp_z, tmp_val, kind = 'linear', bounds_error = False,
+                     fill_value = (tmp_val[0], tmp_val[-1]))
+        schism_val[n,:] = f(schism_z[n,:])
+    return schism_val
 
