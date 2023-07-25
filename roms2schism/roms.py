@@ -129,6 +129,8 @@ class roms_data(object):
         self.sc_w = nc.variables['s_w'][:]
         self.Cs_w = nc.variables['Cs_w'][:]
         self.hc = nc.variables['hc'][:]
+        self.nlevels_r = len(self.Cs_r)
+        self.nlevels_w = len(self.Cs_w)
         nc.close()
 
     def append(self, new, get_w = False):

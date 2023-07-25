@@ -166,8 +166,8 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
     side_y = 0.5 * (schism.yi[schism.sides[:,0]] + schism.yi[schism.sides[:,1]])
     side_interp = itp.interpolator(roms_grid,mask_OK, side_x, side_y, dcrit)
 
-    Nz = len(roms_data.Cs_r)  # number of ROMS rho levels
-    Nw = len(roms_data.Cs_w)  # number of ROMS w levels
+    Nz = roms_data.nlevels_r  # number of ROMS rho levels
+    Nw = roms_data.nlevels_w  # number of ROMS w levels
 
     schism_zeta = node_interp.interpolate(roms_data.zeta[0, mask_OK])
     schism_elt_zeta = elt_interp.interpolate(roms_data.zeta[0, mask_OK])
