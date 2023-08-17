@@ -32,7 +32,7 @@ class roms_grid(object):
         self.h = nc.variables['h'][self.j0:self.j1, self.i0:self.i1]
         # if east/north velocities not present, need to rotate and process from staggered velocities:
         self.rotate = not all([var in nc.variables for var in ['u_eastward', 'v_northward']])
-        if self.rotate:
+        if self.rotate and 'angle' in nc.variables:
             self.angle = nc.variables['angle'][self.j0:self.j1, self.i0:self.i1]
         self.lonr = lonr[self.j0:self.j1, self.i0:self.i1]
         self.latr = latr[self.j0:self.j1, self.i0:self.i1]
@@ -110,12 +110,13 @@ class roms_data(object):
         i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
         self.zeta = nc.variables['zeta'][nt1:nt2, j0:j1, i0:i1]
         if grid.rotate:
-            # rotate and de-stagger velocities:
-            u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1]
-            v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1]
-            ur = 0.5*(u[:,:,:,:-1] + u[:,:,:,1:])
-            vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
-            self.u, self.v = geom.rot2d(ur, vr, grid.angle)
+            if all([var in nc.variables for var in ['u', 'v']]):
+                # rotate and de-stagger velocities:
+                u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1]
+                v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1]
+                ur = 0.5*(u[:,:,:,:-1] + u[:,:,:,1:])
+                vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
+                self.u, self.v = geom.rot2d(ur, vr, grid.angle)
         else:
             self.u = nc.variables['u_eastward'][nt1:nt2, :, j0:j1, i0:i1]
             self.v = nc.variables['v_northward'][nt1:nt2, :, j0:j1, i0:i1]

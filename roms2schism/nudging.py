@@ -66,7 +66,7 @@ def make_nudging(schism, template, dates, start = None, end = None, roms_dir = '
     roms_grid = rs.roms_grid(fname, roms_grid_dir, sponge_bbox, schism.lonc, schism.latc)
     mask_OK = roms_grid.maskr == 1  # this is the case to avoid interp with masked land values
 
-    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates, start, end)
+    roms_data = rs.roms_data(roms_grid, roms_dir, template, dates, start, end, get_w = False)
       
     interp = itp.interpolator(roms_grid, mask_OK, sponge_x, sponge_y, dcrit)
 
