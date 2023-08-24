@@ -77,6 +77,7 @@ class roms_data(object):
                         if end is not None:
                             if self.date[-1] >= end: break
                     except:
+                        print('Error reading ROMS file: %s' % fname)
                         continue
 
     def read(self, grid, roms_dir, filename, start = None, end = None, single = False,
