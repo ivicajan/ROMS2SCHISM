@@ -111,7 +111,8 @@ class roms_data(object):
         i0, i1, j0, j1 = grid.i0, grid.i1, grid.j0, grid.j1
         self.zeta = nc.variables['zeta'][nt1:nt2, j0:j1, i0:i1]
         if grid.rotate:
-            if all([var in nc.variables for var in ['u', 'v']]):
+            self.has_uv = all([var in nc.variables for var in ['u', 'v']])
+            if self.has_uv:
                 # rotate and de-stagger velocities:
                 u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1]
                 v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1]
@@ -119,8 +120,10 @@ class roms_data(object):
                 vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
                 self.u, self.v = geom.rot2d(ur, vr, grid.angle)
         else:
-            self.u = nc.variables['u_eastward'][nt1:nt2, :, j0:j1, i0:i1]
-            self.v = nc.variables['v_northward'][nt1:nt2, :, j0:j1, i0:i1]
+            self.has_uv = all([var in nc.variables for var in ['u_eastward', 'v_northward']])
+            if self.has_uv:
+                self.u = nc.variables['u_eastward'][nt1:nt2, :, j0:j1, i0:i1]
+                self.v = nc.variables['v_northward'][nt1:nt2, :, j0:j1, i0:i1]
         if get_w:
             self.w = nc.variables['w'][nt1:nt2, :, j0:j1, i0:i1]
         self.temp = nc.variables['temp'][nt1:nt2, :, j0:j1, i0:i1]
@@ -145,8 +148,9 @@ class roms_data(object):
             i0 = min(np.searchsorted(new.date, self.date[-1]) + 1, len(new.date))
         self.date = np.append(self.date, new.date[i0:], axis = 0)
         self.zeta = np.append(self.zeta, new.zeta[i0:], axis = 0)
-        self.u = np.append(self.u, new.u[i0:], axis = 0)
-        self.v = np.append(self.v, new.v[i0:], axis = 0)
+        if self.has_uv:
+            self.u = np.append(self.u, new.u[i0:], axis = 0)
+            self.v = np.append(self.v, new.v[i0:], axis = 0)
         if get_w: np.append(self.w, new.w[i0:], axis = 0)
         self.temp = np.append(self.temp, new.temp[i0:], axis = 0)
         self.salt = np.append(self.salt, new.salt[i0:], axis = 0)
