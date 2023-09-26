@@ -17,5 +17,5 @@ setuptools.setup(
         "Operating System :: OS Independent"],
     python_requires='>=3.6',
     install_requires=['progressbar2', 'netCDF4', 'numpy', 'scipy',
-                      'pyschism', 'matplotlib']
+                      'pyschism', 'matplotlib', 'appdirs']
 )
