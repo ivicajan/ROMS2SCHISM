@@ -13,7 +13,6 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 import os, sys
 import numpy as np
-#from numpy import *
 from roms2schism.geometry import transform_ll_to_cpp, bbox
 
 class schism_hgrid(object):
