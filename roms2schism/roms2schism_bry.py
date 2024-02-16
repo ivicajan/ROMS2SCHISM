@@ -15,13 +15,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-from datetime import timedelta
+from datetime import datetime, timedelta
 from roms2schism import schism as sm
 from roms2schism import boundary as bdy
 from roms2schism import nudging as ndg
 
 def main(dates, template, bry=False, nudge=False, schism_grid_dir = './',
-         roms_dir = './', roms_grid_filename = None,
+         roms_dir = './', roms_grid_dir = './', roms_grid_filename = None,
          lonc = None, latc = None, dcrit = 700):
     # ## Actual start of the roms2schism interpolation
     

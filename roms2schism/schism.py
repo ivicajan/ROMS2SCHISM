@@ -11,11 +11,66 @@ ROMS2SCHISM is distributed in the hope that it will be useful, but WITHOUT ANY W
 
 You should have received a copy of the GNU Lesser General Public License along with ROMS2SCHISM.  If not, see <http://www.gnu.org/licenses/>."""
 
-import os
-from itertools import islice
+import os, sys
 import numpy as np
-from pyschism.mesh import Hgrid
+#from numpy import *
 from roms2schism.geometry import transform_ll_to_cpp, bbox
+
+class schism_hgrid(object):
+    def __init__(self, fname):
+        '''
+        Initialize to empty instance if fname is not provided;
+        otherwise, read from three supported file format
+        '''
+        if fname is None:
+            pass
+        elif fname.endswith('gr3') or fname.endswith('.ll'):
+            self.read_hgrid(fname)
+        else:
+            raise Exception('hgrid file format {} not recognized'.format(fname))
+        
+    def read_hgrid(self,fname,*args):
+        #attribute tracking the file originally read, mainly used for savez and save_pkl
+        self.source_file = fname
+
+        fid = open(fname,'r'); lines = fid.readlines(); fid.close()
+
+        #read ne and np; lx,ly and dp
+        self.ne,self.np = [*np.array(lines[1].split()[0:2]).astype('int')]
+        self.x,self.y,self.z = np.array([i.split()[1:4] for i in lines[2:(2+self.np)]]).astype('float').T
+        if len(lines)<(2+self.np+self.ne): return
+
+        #read elnode and i34
+        fdata=[i.strip().split() for i in lines[(2+self.np):(2+self.np+self.ne)]]
+        fdata=np.array([i if len(i)==6 else [*i,'-1'] for i in fdata]).astype('int')
+        self.i34=fdata[:,1]; self.elnode=fdata[:,2:]-1; fdata=None
+
+        #compute ns
+        #self.compute_side()
+        #if len(lines)<(4+self.np+self.ne): return
+
+        #read open bnd info
+        n=2+self.np+self.ne; self.nob=int(lines[n].strip().split()[0]); n=n+2; self.nobn=[]; self.iobn=[]
+        for i in np.arange(self.nob):
+            self.nobn.append(int(lines[n].strip().split()[0]))
+            self.iobn.append(np.array([int(lines[n+1+k].strip().split()[0])-1 for k in np.arange(self.nobn[-1])]))
+            n=n+1+self.nobn[-1]
+        self.nobn=np.array(self.nobn); self.iobn=np.array(self.iobn,dtype='O')
+        if len(self.iobn)==1: self.iobn=self.iobn.astype('int')
+
+        #read land bnd info
+        self.nlb=int(lines[n].strip().split()[0]); n=n+2; self.nlbn=[]; self.ilbn=[]; self.island=[]
+        for i in np.arange(self.nlb):
+            sline=lines[n].split('=')[0].split(); self.nlbn.append(int(sline[0])); ibtype=0
+            self.ilbn.append(np.array([int(lines[n+1+k].strip().split()[0])-1 for k in np.arange(self.nlbn[-1])]))
+            n=n+1+self.nlbn[-1]
+
+            #add bnd type info
+            if len(sline)==2: ibtype=int(sline[1])
+            if self.ilbn[-1][0]==self.ilbn[-1][-1]: ibtype=1
+            self.island.append(ibtype)
+        self.island=np.array(self.island); self.nlbn=np.array(self.nlbn); self.ilbn=np.array(self.ilbn,dtype='O');
+        if len(self.ilbn)==1: self.ilbn=self.ilbn.astype('int')
 
 class schism_vgrid:
     def __init__(self):
@@ -82,8 +137,15 @@ def read_schism_vgrid(fname):
     '''
     read schism vgrid information
     '''
-    vd=schism_vgrid(); vd.read_vgrid(fname)
+    vd = schism_vgrid(); vd.read_vgrid(fname)
     return vd
+
+def read_schism_hgrid(fname):
+    '''
+    read schism hgrid information
+    '''
+    gd = schism_hgrid(fname); #gd.read_hgrid(fname)
+    return gd
 
 def compute_zcor(sigma,dp,eta=0,fmt=0,kbp=None,ivcor=1,vd=None,method=0,ifix=0):
     '''
@@ -106,7 +168,7 @@ def compute_zcor(sigma,dp,eta=0,fmt=0,kbp=None,ivcor=1,vd=None,method=0,ifix=0):
 
         #get kbp
         if kbp is None:
-            kbp=np.array([nonzero(abs(i+1)<1e-10)[0][-1] for i in sigma])
+            kbp=np.array([np.nonzero(abs(i+1)<1e-10)[0][-1] for i in sigma])
 
         #thickness of water column
         hw=dp+eta
@@ -118,7 +180,7 @@ def compute_zcor(sigma,dp,eta=0,fmt=0,kbp=None,ivcor=1,vd=None,method=0,ifix=0):
         #change format
         if fmt==1:
             for i in np.arange(npp):
-                zcor[i,:kbp[i]]=nan
+                zcor[i,:kbp[i]]=np.nan
         return zcor
     elif ivcor==2:
         #get dimension of pts
@@ -182,25 +244,26 @@ class schism_grid(object):
         print('Reading SCHISM grid %s, %s...' % (schism_grid_file, schism_vgrid_file))
         # get schism mesh
         hgrid_filename = os.path.join(schism_grid_dir, schism_grid_file)
-        hgrid = Hgrid.open(hgrid_filename,  crs = 'EPSG:4326')
+        hgrid = read_schism_hgrid(hgrid_filename)
+        #hgrid = hg.read_hgrid(hgrid_filename)
+        print(hgrid)
         # get schism depths
         vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
-        vd=read_schism_vgrid(schism_vgrid_file)
-        zcor=vd.compute_zcor(-hgrid.values)
+        vd = read_schism_vgrid(schism_vgrid_file)
+        zcor = vd.compute_zcor(hgrid.z)
         nvrt = zcor.shape[1] 
-        self.lon = hgrid.coords[:,0]
-        self.lat = hgrid.coords[:,1]
+        self.lon = hgrid.x
+        self.lat = hgrid.y
         self.lonc = np.average(self.lon) if lonc is None else lonc # reference coords
         self.latc = np.average(self.lat) if latc is None else latc # for conversion
         x, y = transform_ll_to_cpp(self.lon, self.lat,
                                    self.lonc, self.latc) # transform them to meters
 
         # get SCHISM open boundaries from grid file
-        gdf = hgrid.boundaries.open.copy()
-        opbd = gdf.indexes[0]       # need only first open boundary as 2nd is river
+        opbd = hgrid.iobn[0].copy()       # need only first open boundary as 2nd is river
         zcor2 = zcor[opbd,:]        # depths at the boundary nodes
-        blon = hgrid.coords[opbd,0]  # OB lons
-        blat = hgrid.coords[opbd,1]  # OB lats
+        blon = hgrid.x[opbd]  # OB lons
+        blat = hgrid.y[opbd]  # OB lats
         NOP = len(blon)              # number of open boundary nodes
         self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
         self.b_bbox = bbox(blon, blat, offset = bbox_offset)
@@ -211,8 +274,8 @@ class schism_grid(object):
         self.b_depth = zcor2
         self.xi = x
         self.yi = y
-        self.triangles = hgrid.triangles
-        self.elements = hgrid.elements.array
-        self.sides = hgrid.elements.sides
+        self.triangles = hgrid.elnode[:,0:3]
+        #self.elements = hgrid.elements.array
+        #self.sides = hgrid.elements.sides
         self.depth = zcor
         self.bbox = bbox(self.lon, self.lat, offset = bbox_offset)
