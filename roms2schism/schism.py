@@ -15,6 +15,7 @@ import os, sys
 import numpy as np
 from roms2schism.geometry import transform_ll_to_cpp, bbox
 
+<<<<<<< HEAD
 class schism_hgrid(object):
     def __init__(self, fname):
         '''
@@ -68,6 +69,33 @@ class schism_hgrid(object):
             self.island.append(ibtype)
         self.island=np.array(self.island); self.nlbn=np.array(self.nlbn); self.ilbn=np.array(self.ilbn,dtype='O');
         if len(self.ilbn)==1: self.ilbn=self.ilbn.astype('int')
+=======
+class gr3(object):
+    """Class for gr3 grid"""
+
+    def __init__(self, filename):
+
+        with open(filename,'r') as fid:
+            # grid  name
+            self.name = fid.readline().strip()
+            # number of elements and nodes
+            tmp = fid.readline().split()
+            self.ne = int(tmp[0])
+            self.nn = int(tmp[1])
+            # first load nodes and values
+            # not using nn
+            tmp = list(islice(fid, self.nn))
+            node_id, self.x, self.y, self.z = np.loadtxt(tmp,
+                                                         dtype = {'names':('n','x','y','z'),
+                                                                  'formats':('i4','f8','f8','f8')},
+                                                         usecols = (0,1,2,3),
+                                                         unpack=True)
+            del node_id
+            # elements
+            tmp = list(islice(fid, self.ne))
+            tmp_e = np.loadtxt(tmp, dtype='i4')
+            self.e = tmp_e[:,2:] - 1
+>>>>>>> 067ae58a2bfd39b2efc2276067d6f0e90a3c0dea
 
 class schism_vgrid:
     def __init__(self):
