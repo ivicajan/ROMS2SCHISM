@@ -344,5 +344,5 @@ class schism_grid(object):
         self.triangles = hgrid.elnode[:,0:3]
         self.elements  = hgrid.elnode[:,0:3]
         self.sides = hgrid.isidenode
-        self.depth = zcor
+        self.depth = -zcor
         self.bbox = bbox(self.lon, self.lat, offset = bbox_offset)
