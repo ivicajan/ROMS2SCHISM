@@ -29,9 +29,7 @@ class schism_hgrid(object):
             raise Exception('hgrid file format {} not recognized'.format(fname))
         
     def read_hgrid(self,fname,*args):
-        #attribute tracking the file originally read, mainly used for savez and save_pkl
         self.source_file = fname
-
         fid = open(fname,'r'); lines = fid.readlines(); fid.close()
 
         #read ne and np; lx,ly and dp
