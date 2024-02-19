@@ -19,11 +19,11 @@ from roms2schism import geometry as geom
 class roms_grid(object):
     """Class for ROMS grid"""
     
-    def __init__(self, filename, grid_dir, bbox, lonc, latc):
+    def __init__(self, filename, roms_dir, bbox, lonc, latc):
         """Reads ROMS grid data from ROMS grid file or output."""
 
         print('Reading roms grid %s...' % filename)
-        fname = os.path.join(grid_dir, filename)
+        fname = os.path.join(roms_dir, filename)
         nc = Dataset(fname,'r')
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
