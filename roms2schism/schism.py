@@ -118,6 +118,7 @@ class gr3(object):
 
     def __init__(self, filename):
 
+        from itertools import islice
         with open(filename,'r') as fid:
             # grid  name
             self.name = fid.readline().strip()
@@ -138,6 +139,7 @@ class gr3(object):
             tmp = list(islice(fid, self.ne))
             tmp_e = np.loadtxt(tmp, dtype='i4')
             self.e = tmp_e[:,2:] - 1
+
 
 class schism_vgrid:
     def __init__(self):
