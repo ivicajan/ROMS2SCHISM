@@ -43,8 +43,9 @@ class schism_hgrid(object):
         self.i34=fdata[:,1]; self.elnode=fdata[:,2:]-1; fdata=None
 
         #compute ns
-        #self.compute_side()
-        #if len(lines)<(4+self.np+self.ne): return
+        self.compute_side(fmt=2)
+        
+        if len(lines)<(4+self.np+self.ne): return
 
         #read open bnd info
         n=2+self.np+self.ne; self.nob=int(lines[n].strip().split()[0]); n=n+2; self.nobn=[]; self.iobn=[]
@@ -68,6 +69,49 @@ class schism_hgrid(object):
             self.island.append(ibtype)
         self.island=np.array(self.island); self.nlbn=np.array(self.nlbn); self.ilbn=np.array(self.ilbn,dtype='O');
         if len(self.ilbn)==1: self.ilbn=self.ilbn.astype('int')
+
+    def compute_side(self,fmt=0):
+        '''
+        compute side information of schism's hgrid
+        fmt=0: compute ns (# of sides) only
+        fmt=1: compute (ns,isidenode,isdel)
+        fmt=2: compute (ns,isidenode,isdel), (xcj,ycj,dps,distj), and (nns,ins)
+        '''
+
+        #collect sides
+        fp3=self.i34==3; self.elnode[fp3,-1]=self.elnode[fp3,0]; sis=[]; sie=[]
+        for i in np.arange(4):
+            sis.append(np.c_[self.elnode[:,(i+1)%4],self.elnode[:,(i+2)%4]]); sie.append(np.arange(self.ne))
+        sie=np.array(sie).T.ravel(); sis=np.array(sis).transpose([1,0,2]).reshape([len(sie),2])
+        fpn=np.diff(sis,axis=1)[:,0]!=0; sis=sis[fpn]; sie=sie[fpn]; self.elnode[fp3,-1]=-2
+
+        #sort sides
+        usis=np.sort(sis,axis=1).T; usis,sind,sindr=np.unique(usis[0]+1j*usis[1],return_index=True,return_inverse=True)
+        self.ns=len(sind)
+
+        if fmt==0:
+           return self.ns
+        elif fmt in [1,2]:
+           #build isidenode
+           sinda=np.argsort(sind); sinds=sind[sinda]; self.isidenode=sis[sinds]
+
+           #build isdel
+           se1=sie[sinds]; se2=-np.ones(self.ns).astype('int')
+           sindl=np.setdiff1d(np.arange(len(sie)),sind); se2[sindr[sindl]]=sie[sindl]; se2=se2[sinda]
+           self.isdel=np.c_[se1,se2]; fps=(se1>se2)*(se2!=-1); self.isdel[fps]=np.fliplr(self.isdel[fps])
+
+           #compute xcj,ycj and dps
+           if fmt==2:
+              self.xcj,self.ycj,self.dps=np.c_[self.x,self.y,self.z][self.isidenode].mean(axis=1).T
+              self.distj=np.abs(np.diff(self.x[self.isidenode],axis=1)+1j*np.diff(self.y[self.isidenode],axis=1))[:,0]
+
+              inode=self.isidenode.ravel(); iside=np.tile(np.arange(self.ns),2) #node-side table
+              sind=np.argsort(inode); inode=inode[sind]; iside=iside[sind]
+              self.nns=np.unique(inode,return_counts=True)[1]; self.ins=-np.ones([self.np,self.nns.max()]).astype('int'); n=0
+              for i in np.arange(self.np): self.ins[i,:self.nns[i]]=iside[n:(n+self.nns[i])]; n=n+self.nns[i]
+
+           return self.ns,self.isidenode,self.isdel
+
 
 class gr3(object):
     """Class for gr3 grid"""
@@ -298,7 +342,7 @@ class schism_grid(object):
         self.xi = x
         self.yi = y
         self.triangles = hgrid.elnode[:,0:3]
-        #self.elements = hgrid.elements.array
-        #self.sides = hgrid.elements.sides
+        self.elements  = hgrid.elnode[:,0:3]
+        self.sides = hgrid.isidenode
         self.depth = zcor
         self.bbox = bbox(self.lon, self.lat, offset = bbox_offset)

@@ -64,7 +64,9 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
     idry_e = dst.createVariable('idry_e', 'i4', ('elem'))
     dst['idry_e'][:] = 0
-    dst['idry_e'][np.where([np.any(dry_node[nodes.compressed()])
+    #dst['idry_e'][np.where([np.any(dry_node[nodes.compressed()])
+    #                              for nodes in schism.elements])] = 1
+    dst['idry_e'][np.where([np.any(dry_node[nodes])
                                   for nodes in schism.elements])] = 1
     idry_e.long_name = "wet/dry flag at elements"
 
@@ -102,9 +104,13 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     tr_nd0.long_name = "initial tracer concentration at nodes"
 
     tr_el = dst.createVariable('tr_el', 'f8', ('elem', 'nVert', 'ntracers'))
-    temp_el = np.array([np.average(temp_data[nodes.compressed(),:], axis = 0)
+    #temp_el = np.array([np.average(temp_data[nodes.compressed(),:], axis = 0)
+    #                                for nodes in schism.elements])
+    #salt_el = np.array([np.average(salt_data[nodes.compressed(),:], axis = 0)
+    #                                for nodes in schism.elements])
+    temp_el = np.array([np.average(temp_data[nodes,:], axis = 0)
                                     for nodes in schism.elements])
-    salt_el = np.array([np.average(salt_data[nodes.compressed(),:], axis = 0)
+    salt_el = np.array([np.average(salt_data[nodes,:], axis = 0)
                                     for nodes in schism.elements])
     dst['tr_el'][:,:,0] = temp_el
     dst['tr_el'][:,:,1] = salt_el
@@ -140,7 +146,7 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
 def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
                   roms_grid_filename = None, roms_grid_dir = None,
-                  dcrit = 700, h0 = 0.01):
+                  dcrit = 700, h0 = 0.01, get_w = True):
     """Creates hotstart.nc from initial results in ROMS output file.
     h0 is the minimum depth for wet nodes."""
 
@@ -155,12 +161,14 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
 
     # read initial roms data:
     roms_data = rs.roms_data(roms_grid, roms_dir, roms_data_filename, start = start,
-                             single = True, get_w = True)
+                             single = True, get_w = get_w)
     
     node_interp = itp.interpolator(roms_grid,mask_OK, schism.xi, schism.yi, dcrit)
 
-    elt_x = np.array([np.average(schism.xi[nodes.compressed()]) for nodes in schism.elements])
-    elt_y = np.array([np.average(schism.yi[nodes.compressed()]) for nodes in schism.elements])
+    #elt_x = np.array([np.average(schism.xi[nodes.compressed()]) for nodes in schism.elements])
+    #elt_y = np.array([np.average(schism.yi[nodes.compressed()]) for nodes in schism.elements])
+    elt_x = np.array([np.average(schism.xi[nodes]) for nodes in schism.elements])
+    elt_y = np.array([np.average(schism.yi[nodes]) for nodes in schism.elements])
     elt_interp = itp.interpolator(roms_grid,mask_OK, elt_x, elt_y, dcrit)
 
     side_x = 0.5 * (schism.xi[schism.sides[:,0]] + schism.xi[schism.sides[:,1]])
@@ -176,7 +184,9 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
     schism_node_depth = schism.depth # schism depths at the nodes [nnodes, nvrt]
     schism_side_depth = 0.5 * (schism_node_depth[schism.sides[:,0],:] + \
                                schism_node_depth[schism.sides[:,1],:])
-    schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed(),:], axis = 0)
+    #schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed(),:], axis = 0)
+    #                             for nodes in schism.elements])
+    schism_elt_depth = np.array([np.average(schism_node_depth[nodes,:], axis = 0)
                                  for nodes in schism.elements])
 
     schism_zeta = node_interp.interpolate(roms_data.zeta[0, mask_OK])
@@ -214,8 +224,10 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
 
     print('Interpolating w...')
     val = np.zeros((Nw, nelts))
-    for k in progressbar(range(0, Nw)):
-        val[k,:] = elt_interp.interpolate(roms_data.w[0,k,][mask_OK])
+    if get_w:
+        print('Using vertical velocy w')
+        for k in progressbar(range(0, Nw)):
+            val[k,:] = elt_interp.interpolate(roms_data.w[0,k,][mask_OK])
     schism_w = itp.vert_interp(val, roms_w_depths_at_schism_elt, -schism_elt_depth)
 
     print('Writing hotstart.nc...')

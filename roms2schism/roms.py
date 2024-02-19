@@ -28,6 +28,7 @@ class roms_grid(object):
         lonr = nc.variables['lon_rho'][:]
         latr = nc.variables['lat_rho'][:]
         self.get_bbox_indices(lonr, latr, bbox)
+        print('  grid rho shape:', np.shape(lonr))
         print('  bbox subset i0=%d, i1=%d, j0=%d, j1=%d' %(self.i0,self.i1,self.j0,self.j1))
         self.h = nc.variables['h'][self.j0:self.j1, self.i0:self.i1]
         # if east/north velocities not present, need to rotate and process from staggered velocities:
@@ -111,10 +112,13 @@ class roms_data(object):
         self.zeta = nc.variables['zeta'][nt1:nt2, j0:j1, i0:i1]
         if grid.rotate:
             # rotate and de-stagger velocities:
-            u = nc.variables['u'][nt1:nt2, :, j0:j1, i0-1:i1]
-            v = nc.variables['v'][nt1:nt2, :, j0-1:j1, i0:i1]
-            ur = 0.5*(u[:,:,:,:-1] + u[:,:,:,1:])
-            vr = 0.5*(v[:,:,:-1,:] + v[:,:,1:,:])
+            utmp = geom.u2rho(nc.variables['u'][:])
+            vtmp = geom.v2rho(nc.variables['v'][:])
+            ur = utmp[nt1:nt2, :, j0:j1, i0:i1]
+            vr = vtmp[nt1:nt2, :, j0:j1, i0:i1]
+            #print('shape(ur):',  np.shape(ur))
+            #print('shape(vr):',  np.shape(vr))
+            #print('shape(angle):',  np.shape(grid.angle))
             self.u, self.v = geom.rot2d(ur, vr, grid.angle)
         else:
             self.u = nc.variables['u_eastward'][nt1:nt2, :, j0:j1, i0:i1]
