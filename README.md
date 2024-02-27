@@ -104,4 +104,8 @@ r2s.hotstart.make_hotstart(schism, roms_data_filename, start_date,
 ```
 ## Installation
 
-Clone or download the ROMS2SCHISM repository from [Github](https://github.com/ivicajan/ROMS2SCHISM). In the ROMS2SCHISM base directory you can then install it via `pip`, e.g. `pip install .` or similar, depending on how you want it installed, whether you're using a Python virtual environment, etc.
+ROMS2SCHISM can be installed from PyPI via `pip`:
+
+```
+pip install roms2schism
+```
