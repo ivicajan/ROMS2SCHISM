@@ -3,7 +3,7 @@
 
 """Copyright 2023 University of Western Australia.
 
-This file is part of ROMS2SCHISM.
+This file is part of ROMS2SCHISM package while some parts belong to the pylib package code (https://github.com/wzhengui/pylibs), namely to read SCHISM model horizontal and vertical grid structure (and are marked in the code). Those specific parts are authorship of Dr. Zhengui Wang (under the Apache License). 
 
 ROMS2SCHISM is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
@@ -15,6 +15,7 @@ import os, sys
 import numpy as np
 from roms2schism.geometry import transform_ll_to_cpp, bbox
 
+# class borrowed from pylibs https://github.com/wzhengui/pylibs 
 class schism_hgrid(object):
     def __init__(self, fname):
         '''
@@ -140,7 +141,7 @@ class gr3(object):
             tmp_e = np.loadtxt(tmp, dtype='i4')
             self.e = tmp_e[:,2:] - 1
 
-
+# class borrowed from pylibs https://github.com/wzhengui/pylibs 
 class schism_vgrid:
     def __init__(self):
         pass
