@@ -308,20 +308,21 @@ class schism_grid(object):
     """Class for SCHISM grid"""
 
     def __init__(self, schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
-                 schism_grid_dir = './', lonc = None, latc = None):
+                 schism_grid_dir = './', iob = [0], lonc = None, latc = None):
+        '''
+        iob is array of open boundary segments you want to use i.e. [0, 1, 2] for first 3 ob
+        '''
 
         bbox_offset = 0.01
-        print('Reading SCHISM grid %s, %s...' % (schism_grid_file, schism_vgrid_file))
+        print('Reading SCHISM grid %s, %s in %s ...' % (schism_grid_file, schism_vgrid_file, schism_grid_dir))
         # get schism mesh
         hgrid_filename = os.path.join(schism_grid_dir, schism_grid_file)
         hgrid = read_schism_hgrid(hgrid_filename)
-        #hgrid = hg.read_hgrid(hgrid_filename)
         print(hgrid)
         # get schism depths
         vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
-        vd = read_schism_vgrid(schism_vgrid_file)
+        vd = read_schism_vgrid(vgrid_filename)
         zcor = vd.compute_zcor(hgrid.z)
-        nvrt = zcor.shape[1] 
         self.lon = hgrid.x
         self.lat = hgrid.y
         self.lonc = np.average(self.lon) if lonc is None else lonc # reference coords
@@ -329,19 +330,19 @@ class schism_grid(object):
         x, y = transform_ll_to_cpp(self.lon, self.lat,
                                    self.lonc, self.latc) # transform them to meters
 
-        # get SCHISM open boundaries from grid file
-        opbd = hgrid.iobn[0].copy()       # need only first open boundary as 2nd is river
-        zcor2 = zcor[opbd,:]        # depths at the boundary nodes
-        blon = hgrid.x[opbd]  # OB lons
-        blat = hgrid.y[opbd]  # OB lats
-        NOP = len(blon)              # number of open boundary nodes
+        # get SCHISM open boundaries from grid file are 1 based !
+        tmp = []
+        for i in iob:
+            tmp.append(hgrid.iobn[i])
+        tmp = np.concatenate(tmp)-1  # python counts from 0 and bry nodes are stored in file as 1 based
+        opbd = tmp.copy()       
         self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
-        self.b_bbox = bbox(blon, blat, offset = bbox_offset)
-        self.NOP = NOP
-        self.nvrt = nvrt
-        self.b_lon = blon
-        self.b_lat = blat
-        self.b_depth = zcor2
+        self.b_bbox = bbox(hgrid.x[opbd], hgrid.y[opbd], offset = bbox_offset)
+        self.NOP = len(opbn)       # number of open boundary nodes
+        self.nvrt = zcor.shape[1]
+        self.b_lon = hgrid.x[opbd]  # OB lons
+        self.b_lat = hgrid.y[opbd]  # OB lats
+        self.b_depth = zcor[opbd,:]  # depths at the boundary nodes
         self.xi = x
         self.yi = y
         self.triangles = hgrid.elnode[:,0:3]
