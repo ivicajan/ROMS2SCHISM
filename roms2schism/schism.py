@@ -345,7 +345,6 @@ class schism_grid(object):
         self.b_depth = zcor[opbd,:]  # depths at the boundary nodes
         self.xi = x
         self.yi = y
-        self.triangles = hgrid.elnode[:,0:3]
         self.elements  = hgrid.elnode[:,0:3]
         self.sides = hgrid.isidenode
         self.depth = -zcor
