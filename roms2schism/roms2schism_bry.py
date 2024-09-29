@@ -22,13 +22,13 @@ from roms2schism import nudging as ndg
 
 def main(dates, template, bry=False, nudge=False, schism_grid_dir = './',
          roms_dir = './', roms_grid_dir = './', roms_grid_filename = None,
-         lonc = None, latc = None, dcrit = 700):
+         iob = [0], lonc = None, latc = None, dcrit = 700):
     # ## Actual start of the roms2schism interpolation
     
     # part with reading SCHISM mesh
     schism_grid_file = 'hgrid.ll'
     schism_vgrid_file = 'vgrid.in'
-    schism = sm.schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir, lonc, latc)
+    schism = sm.schism_grid(schism_grid_file, schism_vgrid_file, schism_grid_dir, iob, lonc, latc)
     
     if bry is True:
         print('Making bry files for SCHISM')
@@ -54,12 +54,15 @@ if __name__=='__main__':
     parser.add_argument('--lonc', default=None, help='reference longitude for converting coordinates to metres (None to use average of SCHISM grid)')
     parser.add_argument('--latc', default=None, help='reference latitude for converting coordinates to metres (None to use average of SCHISM grid)')
     parser.add_argument('--bry', default=False, help='make boundary file')
+    parser.add_argument('--iob', default=0, help='index for open boundary segments (default 0, but can be for example: 0,1,2)')
     parser.add_argument('--nudge', default=False, help='make nudging file')
     parser.add_argument('--template', default='model_avg_%Y%m%d.nc', help='roms output filename template')
     # For nudging you don't need hourly (his) data and faster approach (and better) is to use avg file
     # First call the prog to create bry file with template for his, and then again for nudge but now using template for avg
     args = parser.parse_args()
+    iob = args.iob[1:-1].split(',')
+    iob = [int(i) for i in lst]
     dates = datetime.strptime(args.start_date,'%Y%m%d') + np.arange(args.ndays)*timedelta(days=1)
     main(dates, args.template, args.bry, args.nudge,
          args.schism_grid_dir, args.roms_dir, args.roms_grid_filename,
-         args.lonc, args.latc, args.dcrit)
+         iob, args.lonc, args.latc, args.dcrit)
