@@ -334,7 +334,7 @@ class schism_grid(object):
         tmp = []
         for i in iob:
             tmp.append(hgrid.iobn[i])
-        tmp = np.concatenate(tmp)-1  # python counts from 0 and bry nodes are stored in file as 1 based
+        tmp = np.concatenate(tmp)
         opbd = tmp.copy()       
         self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
         self.b_bbox = bbox(hgrid.x[opbd], hgrid.y[opbd], offset = bbox_offset)
