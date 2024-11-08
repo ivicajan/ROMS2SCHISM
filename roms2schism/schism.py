@@ -338,7 +338,7 @@ class schism_grid(object):
         opbd = tmp.copy()       
         self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
         self.b_bbox = bbox(hgrid.x[opbd], hgrid.y[opbd], offset = bbox_offset)
-        self.NOP = len(opbn)       # number of open boundary nodes
+        self.NOP = len(opbd)       # number of open boundary nodes
         self.nvrt = zcor.shape[1]
         self.b_lon = hgrid.x[opbd]  # OB lons
         self.b_lat = hgrid.y[opbd]  # OB lats
