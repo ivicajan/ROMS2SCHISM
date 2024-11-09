@@ -110,3 +110,8 @@ ROMS2SCHISM can be installed from PyPI via `pip`:
 ```
 pip install roms2schism
 ```
+The latest version with all updates and features can be installed directly from Github repo using `pip` as:
+
+```
+pip install git+https://github.com/ivicajan/ROMS2SCHISM.git
+```
