@@ -8,7 +8,7 @@ version = "0.9.1"
 description = "A Python package for creating SCHISM boundary condition forcing and hotstart files from ROMS output"
 readme = "README.md"
 authors = [
-  {name = "Ivica Janekovic"},
+  {name = "Ivica Janekovic", email = "ivica.janekovic@uwa.edu.au"},
   {name = "Adrian Croucher", email = "a.croucher@auckland.ac.nz"}
 ]
 license = {file = "LICENSE"}
