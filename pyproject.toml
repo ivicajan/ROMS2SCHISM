@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "roms2schism"
-version = "0.9.1"
+version = "0.9.2"
 description = "A Python package for creating SCHISM boundary condition forcing and hotstart files from ROMS output"
 readme = "README.md"
 authors = [
