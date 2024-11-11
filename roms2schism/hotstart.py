@@ -27,10 +27,10 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     # dimensions:
     dst.createDimension('one_new', 1)
     nnodes = len(eta2_data)
-    dst.createDimension('node', nnodes)
-    dst.createDimension('elem', w_data.shape[0])
-    dst.createDimension('side', su2_data.shape[0])
-    dst.createDimension('nVert', su2_data.shape[1])
+    dst.createDimension('node', schism.lon.shape[0])
+    dst.createDimension('elem', schism.elements.shape[0])
+    dst.createDimension('side', schism.sides.shape[0])
+    dst.createDimension('nVert', schism.nvrt)
     dst.createDimension('ntracers', 2)
 
     time = dst.createVariable('time', 'f8', ('one_new'))
@@ -64,8 +64,6 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
 
     idry_e = dst.createVariable('idry_e', 'i4', ('elem'))
     dst['idry_e'][:] = 0
-    #dst['idry_e'][np.where([np.any(dry_node[nodes.compressed()])
-    #                              for nodes in schism.elements])] = 1
     dst['idry_e'][np.where([np.any(dry_node[nodes])
                                   for nodes in schism.elements])] = 1
     idry_e.long_name = "wet/dry flag at elements"
@@ -104,10 +102,6 @@ def save_hotstart_nc(outfile, eta2_data, temp_data, salt_data,
     tr_nd0.long_name = "initial tracer concentration at nodes"
 
     tr_el = dst.createVariable('tr_el', 'f8', ('elem', 'nVert', 'ntracers'))
-    #temp_el = np.array([np.average(temp_data[nodes.compressed(),:], axis = 0)
-    #                                for nodes in schism.elements])
-    #salt_el = np.array([np.average(salt_data[nodes.compressed(),:], axis = 0)
-    #                                for nodes in schism.elements])
     temp_el = np.array([np.average(temp_data[nodes,:], axis = 0)
                                     for nodes in schism.elements])
     salt_el = np.array([np.average(salt_data[nodes,:], axis = 0)
@@ -163,10 +157,8 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
     roms_data = rs.roms_data(roms_grid, roms_dir, roms_data_filename, start = start,
                              single = True, get_w = get_w)
     
-    node_interp = itp.interpolator(roms_grid,mask_OK, schism.xi, schism.yi, dcrit)
+    node_interp = itp.interpolator(roms_grid, mask_OK, schism.xi, schism.yi, dcrit)
 
-    #elt_x = np.array([np.average(schism.xi[nodes.compressed()]) for nodes in schism.elements])
-    #elt_y = np.array([np.average(schism.yi[nodes.compressed()]) for nodes in schism.elements])
     elt_x = np.array([np.average(schism.xi[nodes]) for nodes in schism.elements])
     elt_y = np.array([np.average(schism.yi[nodes]) for nodes in schism.elements])
     elt_interp = itp.interpolator(roms_grid,mask_OK, elt_x, elt_y, dcrit)
@@ -184,8 +176,6 @@ def make_hotstart(schism, roms_data_filename, start = None, roms_dir = './',
     schism_node_depth = schism.depth # schism depths at the nodes [nnodes, nvrt]
     schism_side_depth = 0.5 * (schism_node_depth[schism.sides[:,0],:] + \
                                schism_node_depth[schism.sides[:,1],:])
-    #schism_elt_depth = np.array([np.average(schism_node_depth[nodes.compressed(),:], axis = 0)
-    #                             for nodes in schism.elements])
     schism_elt_depth = np.array([np.average(schism_node_depth[nodes,:], axis = 0)
                                  for nodes in schism.elements])
 

@@ -22,9 +22,10 @@ The defaults for the parameters are:
 * `schism_grid_file`: `hgrid.ll`
 * `schism_vgrid_file`: `vgrid.in`
 * `schism_grid_dir`: `./`
+* `iob`: `0`
 * `lonc`, `latc`: `None`
 
-The `lonc`, `latc` parameters define a reference longitude and latitude, used to convert the horizontal grid coordinates (assumed to be longitude, latitude) to an approximate projected coordinate system. If these are not specified, default values are calculated by averaging the grid vertex coordinates.
+The `iob` is list of open boundary segments you want to include for boundary conditions (default is 0 which is the first boundary only, but can be for example iobn = [0, 1, 2] for first 3 boundaries.  `lonc`, `latc` parameters define a reference longitude and latitude, used to convert the horizontal grid coordinates (assumed to be longitude, latitude) to an approximate projected coordinate system. If these are not specified, default values are calculated by averaging the grid vertex coordinates.
 
 ## Creating boundary conditions
 
@@ -83,7 +84,7 @@ start_date = datetime(2017, 1, 12)
 roms_dir = '/path/to/roms/data/'
 dcrit = 7e3 # should be slightly larger than ROMS grid resolution
 
-# read SCHISM grid:
+# read SCHISM grid and only the first open boundary segment (in case you want other segments specify iob = [0, 1, 2] for example and first 3 segments):
 schism = r2s.schism.schism_grid()
 
 # create boundary forcing files:
@@ -108,4 +109,9 @@ ROMS2SCHISM can be installed from PyPI via `pip`:
 
 ```
 pip install roms2schism
+```
+The latest version with all updates and features can be installed directly from Github repo using `pip` as:
+
+```
+pip install git+https://github.com/ivicajan/ROMS2SCHISM.git
 ```

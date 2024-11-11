@@ -3,7 +3,7 @@
 
 """Copyright 2023 University of Western Australia.
 
-This file is part of ROMS2SCHISM.
+This file is part of ROMS2SCHISM package while some parts belong to the pylib package code (https://github.com/wzhengui/pylibs), namely to read SCHISM model horizontal and vertical grid structure (and are marked in the code). Those specific parts are authorship of Dr. Zhengui Wang (under the Apache License). 
 
 ROMS2SCHISM is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
@@ -15,6 +15,7 @@ import os, sys
 import numpy as np
 from roms2schism.geometry import transform_ll_to_cpp, bbox
 
+# class borrowed from pylibs https://github.com/wzhengui/pylibs 
 class schism_hgrid(object):
     def __init__(self, fname):
         '''
@@ -140,7 +141,7 @@ class gr3(object):
             tmp_e = np.loadtxt(tmp, dtype='i4')
             self.e = tmp_e[:,2:] - 1
 
-
+# class borrowed from pylibs https://github.com/wzhengui/pylibs 
 class schism_vgrid:
     def __init__(self):
         pass
@@ -307,20 +308,21 @@ class schism_grid(object):
     """Class for SCHISM grid"""
 
     def __init__(self, schism_grid_file = 'hgrid.ll', schism_vgrid_file = 'vgrid.in',
-                 schism_grid_dir = './', lonc = None, latc = None):
+                 schism_grid_dir = './', iob = [0], lonc = None, latc = None):
+        '''
+        iob is array of open boundary segments you want to use i.e. [0, 1, 2] for first 3 ob
+        '''
 
         bbox_offset = 0.01
-        print('Reading SCHISM grid %s, %s...' % (schism_grid_file, schism_vgrid_file))
+        print('Reading SCHISM grid %s, %s in %s ...' % (schism_grid_file, schism_vgrid_file, schism_grid_dir))
         # get schism mesh
         hgrid_filename = os.path.join(schism_grid_dir, schism_grid_file)
         hgrid = read_schism_hgrid(hgrid_filename)
-        #hgrid = hg.read_hgrid(hgrid_filename)
         print(hgrid)
         # get schism depths
         vgrid_filename = os.path.join(schism_grid_dir, schism_vgrid_file)
-        vd = read_schism_vgrid(schism_vgrid_file)
+        vd = read_schism_vgrid(vgrid_filename)
         zcor = vd.compute_zcor(hgrid.z)
-        nvrt = zcor.shape[1] 
         self.lon = hgrid.x
         self.lat = hgrid.y
         self.lonc = np.average(self.lon) if lonc is None else lonc # reference coords
@@ -328,22 +330,21 @@ class schism_grid(object):
         x, y = transform_ll_to_cpp(self.lon, self.lat,
                                    self.lonc, self.latc) # transform them to meters
 
-        # get SCHISM open boundaries from grid file
-        opbd = hgrid.iobn[0].copy()       # need only first open boundary as 2nd is river
-        zcor2 = zcor[opbd,:]        # depths at the boundary nodes
-        blon = hgrid.x[opbd]  # OB lons
-        blat = hgrid.y[opbd]  # OB lats
-        NOP = len(blon)              # number of open boundary nodes
+        # get SCHISM open boundaries from grid file are 1 based !
+        tmp = []
+        for i in iob:
+            tmp.append(hgrid.iobn[i])
+        tmp = np.concatenate(tmp)
+        opbd = tmp.copy()       
         self.b_xi, self.b_yi = x[opbd], y[opbd]  # only at the bry nodes
-        self.b_bbox = bbox(blon, blat, offset = bbox_offset)
-        self.NOP = NOP
-        self.nvrt = nvrt
-        self.b_lon = blon
-        self.b_lat = blat
-        self.b_depth = zcor2
+        self.b_bbox = bbox(hgrid.x[opbd], hgrid.y[opbd], offset = bbox_offset)
+        self.NOP = len(opbd)       # number of open boundary nodes
+        self.nvrt = zcor.shape[1]
+        self.b_lon = hgrid.x[opbd]  # OB lons
+        self.b_lat = hgrid.y[opbd]  # OB lats
+        self.b_depth = zcor[opbd,:]  # depths at the boundary nodes
         self.xi = x
         self.yi = y
-        self.triangles = hgrid.elnode[:,0:3]
         self.elements  = hgrid.elnode[:,0:3]
         self.sides = hgrid.isidenode
         self.depth = -zcor
